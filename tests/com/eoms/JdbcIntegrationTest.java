@@ -1,15 +1,15 @@
 package com.eoms;
 
-import com.eoms.config.ApplicationContext;
-import com.eoms.config.DatabaseConnection;
-import com.eoms.model.Exam;
-import com.eoms.model.Question;
-import com.eoms.model.Student;
-import com.eoms.model.Submission;
-import com.eoms.patterns.memento.DraftHistory;
-import com.eoms.patterns.memento.ExamDraft;
-import com.eoms.service.StudentSession;
-import com.eoms.service.TeacherSession;
+import config.ApplicationContext;
+import database.DatabaseConnection;
+import model.Exam;
+import model.Question;
+import model.Student;
+import model.Submission;
+import patterns.memento.DraftHistory;
+import patterns.memento.ExamDraft;
+import service.StudentSession;
+import service.TeacherSession;
 import java.time.Clock;
 import java.util.Map;
 import java.util.UUID;

@@ -5,6 +5,12 @@ Semester 5 Design Patterns Lab project. This is a single-JVM Java 17+ Swing/AWT
 desktop application backed by PostgreSQL 16 via plain JDBC. There is no server,
 HTTP API, web frontend, Maven or Spring dependency.
 
+Source is organized directly under `src/`: `Main.java`, `SetupAccounts.java`,
+`ui/`, `model/`, `service/`, `repository/`, `database/`, `patterns/` and `config/`.
+Additional classes such as `Answer`, the teacher/account repositories, and
+`ExamEditorPanel` are retained because the application uses them. Tests live in
+`tests/`; the additive SQL upgrade lives in `sql/migrations/`.
+
 ## Build and launch (PowerShell, repository root)
 
 Requires JDK 17+, PostgreSQL 16, and the checked-in driver
@@ -18,7 +24,7 @@ java -ea -cp "out;lib/postgresql-42.7.13.jar" com.eoms.CoreDomainTest
 java -ea -cp "out;lib/postgresql-42.7.13.jar" com.eoms.CreationalPatternsTest
 java -ea -cp "out;lib/postgresql-42.7.13.jar" com.eoms.GradingPatternsTest
 java -ea -cp "out;lib/postgresql-42.7.13.jar" com.eoms.CoordinationPatternsTest
-java -cp "out;lib/postgresql-42.7.13.jar" com.eoms.Main
+java -cp "out;lib/postgresql-42.7.13.jar" Main
 ```
 
 On non-Windows shells, replace `;` with `:` in the classpath. Compilation and
@@ -27,7 +33,7 @@ The desktop requires a graphical environment. Operations involving JDBC use
 background workers; errors are shown in the UI rather than blocking the EDT.
 
 For an **opt-in** database integration check, provision a separate `eoms_test`
-database with `sql/schema.sql` and a teacher account with `com.eoms.SetupAccounts`
+database with `sql/schema.sql` and a teacher account with `SetupAccounts`
 using that database's connection variables. Set `EOMS_TEST_DB_URL`,
 `EOMS_TEST_DB_USER`, `EOMS_TEST_DB_PASSWORD`, `EOMS_TEST_TEACHER` and
 `EOMS_TEST_TEACHER_PASSWORD`, then run:
@@ -41,10 +47,12 @@ the URL contains `eoms_test`. Never point it at a populated project database.
 
 ## Database setup (explicit; preserves existing rows)
 
-Create a database separately if needed (for example, `eoms_db`). For a **new**
-database only, apply the complete baseline:
+Check whether `eoms_db` already exists with `psql -U postgres -l`. If it does,
+**do not recreate it**. For a new installation only, create the database once
+and apply the complete baseline:
 
 ```powershell
+psql -U postgres -d postgres -c "CREATE DATABASE eoms_db;"
 psql -v ON_ERROR_STOP=1 -U postgres -d eoms_db -f sql/schema.sql
 ```
 
@@ -81,13 +89,13 @@ and environment variables are set. This explicitly creates the **first** teacher
 only when `teachers` is empty, prompting for a password without echoing it:
 
 ```powershell
-java -cp "out;lib/postgresql-42.7.13.jar" com.eoms.SetupAccounts
+java -cp "out;lib/postgresql-42.7.13.jar" SetupAccounts
 ```
 
 If legacy teacher rows already exist, have the database administrator verify
 ownership, then set the selected existing teacher's password with
-`com.eoms.SetupAccounts --teacher USERNAME`. To enroll an **existing** student,
-use `com.eoms.SetupAccounts --student ID` only after verifying that student's
+`SetupAccounts --teacher USERNAME`. To enroll an **existing** student,
+use `SetupAccounts --student ID` only after verifying that student's
 identity. A new student can register through the login window. The CLI's
 database credentials grant administrator-level account setup: keep them private.
 These local login controls are appropriate for a lab desktop app, not a hardened
@@ -110,7 +118,7 @@ multi-user production deployment.
 
 The UI calls services, services coordinate focused pattern objects and JDBC
 repositories, and `ApplicationContext` constructs dependencies explicitly.
-`src/com/eoms/patterns/` contains Builder (exam creation), Prototype (exam
+`src/patterns/` contains Builder (exam creation), Prototype (exam
 duplication), Memento (draft history), Strategy (grading), Template Method
 (grading sequence), Chain of Responsibility (submission checks), Mediator
 (lifecycle), Observer (transactional audit and Swing refresh), Proxy (student

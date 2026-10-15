@@ -1,15 +1,15 @@
 package com.eoms;
 
-import com.eoms.config.DatabaseConnection;
-import com.eoms.patterns.bridge.ImmediateNotification;
-import com.eoms.patterns.bridge.SwingChannel;
-import com.eoms.patterns.observer.ExamEvent;
-import com.eoms.patterns.observer.ExamEventPublisher;
-import com.eoms.patterns.observer.SwingRefreshObserver;
-import com.eoms.patterns.proxy.QuestionBankProxy;
-import com.eoms.repository.ExamRepository;
-import com.eoms.repository.StudentRepository;
-import com.eoms.repository.SubmissionRepository;
+import database.DatabaseConnection;
+import patterns.bridge.ImmediateNotification;
+import patterns.bridge.SwingChannel;
+import patterns.observer.ExamEvent;
+import patterns.observer.ExamEventPublisher;
+import patterns.observer.SwingRefreshObserver;
+import patterns.proxy.QuestionBankProxy;
+import repository.ExamRepository;
+import repository.StudentRepository;
+import repository.SubmissionRepository;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;

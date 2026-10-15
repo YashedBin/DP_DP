@@ -1,15 +1,15 @@
 package com.eoms;
 
-import com.eoms.config.ApplicationContext;
-import com.eoms.config.DatabaseConnection;
-import com.eoms.model.Exam;
-import com.eoms.repository.ExamRepository;
-import com.eoms.repository.QuestionRepository;
-import com.eoms.repository.StudentRepository;
-import com.eoms.repository.SubmissionRepository;
-import com.eoms.service.DraftExamService;
-import com.eoms.service.QuestionService;
-import com.eoms.service.StudentService;
+import config.ApplicationContext;
+import database.DatabaseConnection;
+import model.Exam;
+import repository.ExamRepository;
+import repository.QuestionRepository;
+import repository.StudentRepository;
+import repository.SubmissionRepository;
+import service.DraftExamService;
+import service.QuestionService;
+import service.StudentService;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;

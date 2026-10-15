@@ -1,11 +1,11 @@
 package com.eoms;
 
-import com.eoms.model.Exam;
-import com.eoms.model.Question;
-import com.eoms.patterns.builder.ExamBuilder;
-import com.eoms.patterns.memento.DraftHistory;
-import com.eoms.patterns.memento.ExamDraft;
-import com.eoms.patterns.prototype.ExamPrototype;
+import model.Exam;
+import model.Question;
+import patterns.builder.ExamBuilder;
+import patterns.memento.DraftHistory;
+import patterns.memento.ExamDraft;
+import patterns.prototype.ExamPrototype;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;

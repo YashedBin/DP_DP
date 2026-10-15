@@ -1,13 +1,13 @@
 package com.eoms;
 
-import com.eoms.model.Exam;
-import com.eoms.model.Question;
-import com.eoms.patterns.chainofresponsibility.ExamWindowHandler;
-import com.eoms.patterns.chainofresponsibility.SubmissionContext;
-import com.eoms.patterns.strategy.ManualStrategy;
-import com.eoms.patterns.strategy.McqStrategy;
-import com.eoms.patterns.templatemethod.GradingWorkflow;
-import com.eoms.service.PasswordHashes;
+import model.Exam;
+import model.Question;
+import patterns.chainofresponsibility.ExamWindowHandler;
+import patterns.chainofresponsibility.SubmissionContext;
+import patterns.strategy.ManualStrategy;
+import patterns.strategy.McqStrategy;
+import patterns.templatemethod.GradingWorkflow;
+import service.PasswordHashes;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
