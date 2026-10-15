@@ -7,10 +7,10 @@ Semester 5 Design Patterns Lab project.
 
 This repository is being rebuilt as a **single-JVM Java 17+ Swing/AWT desktop
 application** with PostgreSQL 16 accessed through plain JDBC. The old Spring
-Boot/Maven server, REST client and browser assets have been removed. This first
-milestone is **not yet a runnable application**: it retains only the reusable
-domain models and database schema. The entry point, services, JDBC repositories,
-Swing screens and ten integrated patterns will arrive in subsequent commits.
+Boot/Maven server, REST client and browser assets have been removed. The current
+desktop scaffold launches a small window that previews **unsaved** exam drafts.
+Authentication, JDBC persistence, complete Swing workflows and ten integrated
+patterns are still to come; the preview does not connect to the database.
 
 The intended dependency flow is Swing UI → services/patterns → JDBC repositories
 → PostgreSQL. Dependencies will be constructed explicitly, with no framework,
@@ -20,19 +20,25 @@ HTTP layer or build tool. The existing driver is `lib/postgresql-42.7.13.jar`.
 
 - `src/com/eoms/model/`: framework-free exam, question, answer, student, teacher
   and submission models retained from the earlier codebase.
+- `src/com/eoms/Main.java`: Swing entry point; `config/ApplicationContext.java`
+  constructs the draft service and passes it to the window explicitly.
+- `src/com/eoms/service/`: exam draft validation, independent of Swing.
+- `src/com/eoms/ui/WelcomeFrame.java`: temporary, non-persistent desktop preview.
 - `sql/schema.sql`: the existing tables, moved without changing their definitions.
 - `docs/legacy/`: preserved historical project notes, UML and setup transcript.
   They describe the former server and are not current run instructions.
 
-To compile the current models in PowerShell (JDK 17+), from the repository root:
+To compile and launch in PowerShell (JDK 17+), from the repository root:
 
 ```powershell
 New-Item -ItemType Directory -Force out | Out-Null
-javac -d out (Get-ChildItem src/com/eoms/model/*.java).FullName
+javac -d out (Get-ChildItem src -Recurse -Filter *.java).FullName
+java -cp "out;lib/postgresql-42.7.13.jar" com.eoms.Main
 ```
 
-There is no `main` class to run yet. The next milestone will add a launchable
-Swing window and document its `javac` / `java` commands.
+The PostgreSQL driver is included on the classpath for the later JDBC milestone;
+the preview itself needs only the JDK. On non-Windows shells, use `:` instead of
+`;` as the classpath separator.
 
 ## Database preservation
 
