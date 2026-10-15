@@ -24,6 +24,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 /** Core persistence workflow. Authentication and pattern-based checks follow in later milestones. */
 public final class SubmissionService {
@@ -68,21 +69,21 @@ public final class SubmissionService {
                 LocalDateTime now = LocalDateTime.now(clock);
                 validation.handle(new SubmissionContext(connection, exam, student, now));
 
-                for (Map.Entry<Long, String> response : responses.entrySet()) {
-                    Long questionId = response.getKey();
-                    if (questionId == null) {
-                        throw new IllegalArgumentException("Invalid question ID");
-                    }
-                    Question question = questions.findById(connection, questionId);
-                    if (question == null || question.getExamId() != examId) {
+                List<Question> examQuestions = questions.findByExamId(connection, examId);
+                Map<Long, Question> permitted = new HashMap<>();
+                for (Question question : examQuestions) permitted.put(question.getId(), question);
+                for (Long questionId : responses.keySet()) {
+                    if (questionId == null || !permitted.containsKey(questionId)) {
                         throw new IllegalArgumentException("Question does not belong to this exam");
                     }
                 }
 
                 saved = submissions.save(connection,
                         new Submission(null, examId, student.studentId(), now, "SUBMITTED", null));
-                for (Map.Entry<Long, String> response : responses.entrySet()) {
-                    answers.save(connection, new Answer(null, saved.getId(), response.getKey(), response.getValue()));
+                // Record even skipped questions so grading cannot ignore unanswered marks.
+                for (Question question : examQuestions) {
+                    answers.save(connection, new Answer(null, saved.getId(), question.getId(),
+                            responses.getOrDefault(question.getId(), "")));
                 }
                 event = new ExamEvent(ExamEvent.Type.EXAM_SUBMITTED, examId, student.studentId(), now);
                 events.publish(event, connection);

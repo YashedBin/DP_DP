@@ -46,5 +46,15 @@ public final class TeacherRepository {
         }
     }
 
+    public void setPassword(String username, String hash) throws SQLException {
+        try (Connection connection = database.open();
+                PreparedStatement statement = connection.prepareStatement(
+                        "UPDATE teachers SET password_hash = ? WHERE username = ?")) {
+            statement.setString(1, hash);
+            statement.setString(2, username);
+            if (statement.executeUpdate() != 1) throw new IllegalArgumentException("Teacher not found");
+        }
+    }
+
     public record Credentials(long id, String passwordHash) {}
 }

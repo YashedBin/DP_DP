@@ -35,7 +35,8 @@ public final class CoreDomainTest {
         } catch (SQLException expected) {
             assert expected.getMessage().contains("EOMS_DB_PASSWORD");
         }
-        QuestionService questions = new QuestionService(new ExamRepository(missing), new QuestionRepository(missing));
+        QuestionService questions = new QuestionService(new ExamRepository(missing),
+                new QuestionRepository(missing), (id, student) -> { throw new AssertionError("Proxy not used"); });
         expectInvalid(() -> questions.add(null, 1, "OTHER", "Question", 5, null));
         expectInvalid(() -> questions.add(null, 1, "MCQ", "Question", 5, null));
         StudentService students = new StudentService(new StudentRepository(missing), new SubmissionRepository(missing));

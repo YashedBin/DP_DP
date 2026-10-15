@@ -6,6 +6,7 @@ import com.eoms.model.Question;
 public final class ManualStrategy implements GradingStrategy {
     @Override
     public Double evaluate(Question question, String response, String answerKey, Double manualMark) {
+        if (response == null || response.isBlank()) return 0.0;
         return manualMark;
     }
 }

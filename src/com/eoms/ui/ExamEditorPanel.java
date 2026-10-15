@@ -130,7 +130,7 @@ public final class ExamEditorPanel extends JPanel {
                 history.restore(version, draft);
                 UiTasks.run(this, () -> { context.exams().restoreDraft(teacher, examId, draft); return null; },
                         ignored -> {
-                            UiTasks.show(this, "Draft content restored. Re-enter MCQ answer keys if needed.");
+                            UiTasks.show(this, "Draft questions and MCQ keys restored with new IDs.");
                             refresh();
                         });
             } catch (IllegalArgumentException ex) { UiTasks.show(this, ex.getMessage()); }
@@ -139,9 +139,18 @@ public final class ExamEditorPanel extends JPanel {
     }
 
     public void refresh() {
-        UiTasks.run(this, () -> context.questions().listForEditor(teacher, examId), questions -> {
-            draft.setQuestions(new ArrayList<>(questions));
-            list.setListData(questions.toArray(Question[]::new));
+        UiTasks.run(this, () -> {
+            List<Question> found = context.questions().listForEditor(teacher, examId);
+            var keys = context.questions().answerKeysForEditor(teacher, examId);
+            List<String> aligned = new ArrayList<>();
+            for (Question question : found) aligned.add(keys.get(question.getId()));
+            return new QuestionData(found, aligned);
+        }, data -> {
+            draft.setQuestions(new ArrayList<>(data.questions()));
+            draft.setAnswerKeys(data.keys());
+            list.setListData(data.questions().toArray(Question[]::new));
         });
     }
+
+    private record QuestionData(List<Question> questions, List<String> keys) {}
 }

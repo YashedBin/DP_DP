@@ -28,7 +28,7 @@ public final class LoginFrame extends JFrame {
         JPanel teachers = new JPanel(new GridLayout(3, 2, 8, 8));
         teachers.add(new JLabel("Teacher username")); teachers.add(teacherName);
         teachers.add(new JLabel("Password")); teachers.add(teacherPassword);
-        teachers.add(teacherLogin); teachers.add(new JLabel("Provision teacher via BootstrapTeacher"));
+        teachers.add(teacherLogin); teachers.add(new JLabel("Provision teacher via SetupAccounts"));
         forms.add(teachers);
 
         JTextField studentId = new JTextField();
@@ -75,7 +75,10 @@ public final class LoginFrame extends JFrame {
             if (javax.swing.JOptionPane.showConfirmDialog(this, fields, "New student",
                     javax.swing.JOptionPane.OK_CANCEL_OPTION) != javax.swing.JOptionPane.OK_OPTION) return;
             String secret = new String(password.getPassword());
-            UiTasks.run(this, () -> context.students().register(name.getText(), email.getText(), secret),
+            String fullName = name.getText();
+            String address = email.getText();
+            password.setText("");
+            UiTasks.run(this, () -> context.students().register(fullName, address, secret),
                     created -> UiTasks.show(this, "Registered. Your student ID is " + created.getId()));
         });
 

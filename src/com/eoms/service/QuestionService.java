@@ -8,16 +8,13 @@ import com.eoms.patterns.proxy.QuestionBank;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /** Editing operations only; student-facing access is deliberately deferred to the proxy. */
 public final class QuestionService {
     private final ExamRepository exams;
     private final QuestionRepository questions;
     private final QuestionBank studentQuestions;
-
-    public QuestionService(ExamRepository exams, QuestionRepository questions) {
-        this(exams, questions, null);
-    }
 
     public QuestionService(ExamRepository exams, QuestionRepository questions, QuestionBank studentQuestions) {
         this.exams = exams;
@@ -26,7 +23,6 @@ public final class QuestionService {
     }
 
     public List<Question> listForStudent(long examId, StudentSession student) throws SQLException {
-        if (studentQuestions == null) throw new IllegalStateException("Student question access is not configured");
         return studentQuestions.forStudent(examId, student);
     }
 
@@ -34,6 +30,12 @@ public final class QuestionService {
         requireTeacher(teacher);
         requireDraft(examId);
         return questions.findByExamId(examId);
+    }
+
+    public Map<Long, String> answerKeysForEditor(TeacherSession teacher, long examId) throws SQLException {
+        requireTeacher(teacher);
+        requireDraft(examId);
+        return questions.keysForExam(examId);
     }
 
     public Question add(TeacherSession teacher, long examId, String type, String text,

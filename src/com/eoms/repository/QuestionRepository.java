@@ -8,6 +8,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /** Internal data access; callers must enforce question visibility in services. */
 public final class QuestionRepository {
@@ -31,16 +33,6 @@ public final class QuestionRepository {
                 List<Question> questions = new ArrayList<>();
                 while (rows.next()) questions.add(read(rows));
                 return questions;
-            }
-        }
-    }
-
-    public Question findById(Connection connection, long id) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT id, exam_id, type, text, marks, options FROM questions WHERE id = ?")) {
-            statement.setLong(1, id);
-            try (ResultSet rows = statement.executeQuery()) {
-                return rows.next() ? read(rows) : null;
             }
         }
     }
@@ -96,6 +88,43 @@ public final class QuestionRepository {
         try (PreparedStatement statement = connection.prepareStatement(
                 "DELETE FROM questions WHERE exam_id = ?")) {
             statement.setLong(1, examId);
+            statement.executeUpdate();
+        }
+    }
+
+    /** Transfer MCQ answer key when copying a question; never reads it through student access. */
+    public void copyKey(Connection connection, long sourceId, long destinationId) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "INSERT INTO question_keys (question_id, correct_answer) "
+                        + "SELECT ?, correct_answer FROM question_keys WHERE question_id = ?")) {
+            statement.setLong(1, destinationId);
+            statement.setLong(2, sourceId);
+            statement.executeUpdate();
+        }
+    }
+
+    /** Teacher-only draft content. Do not call this from student question access. */
+    public Map<Long, String> keysForExam(long examId) throws SQLException {
+        try (Connection connection = database.open();
+                PreparedStatement statement = connection.prepareStatement(
+                        "SELECT k.question_id, k.correct_answer FROM question_keys k "
+                        + "JOIN questions q ON q.id = k.question_id "
+                        + "JOIN exams e ON e.id = q.exam_id WHERE e.id = ? AND e.status = 'DRAFT'")) {
+            statement.setLong(1, examId);
+            try (ResultSet rows = statement.executeQuery()) {
+                Map<Long, String> result = new HashMap<>();
+                while (rows.next()) result.put(rows.getLong(1), rows.getString(2));
+                return result;
+            }
+        }
+    }
+
+    public void saveKey(Connection connection, long questionId, String answer) throws SQLException {
+        if (answer == null) return;
+        try (PreparedStatement statement = connection.prepareStatement(
+                "INSERT INTO question_keys (question_id, correct_answer) VALUES (?, ?)")) {
+            statement.setLong(1, questionId);
+            statement.setString(2, answer);
             statement.executeUpdate();
         }
     }

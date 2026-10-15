@@ -23,6 +23,7 @@ public final class CreationalPatternsTest {
         assert "First question".equals(copy.questions().get(0).getText());
 
         ExamDraft draft = new ExamDraft(original, copy.questions());
+        draft.setAnswerKeys(java.util.Arrays.asList("A"));
         DraftHistory history = new DraftHistory();
         history.save("v1", draft);
         draft.exam().setTitle("Changed");
@@ -31,6 +32,7 @@ public final class CreationalPatternsTest {
         assert "Exam".equals(draft.exam().getTitle());
         assert "First question".equals(draft.questions().get(0).getText());
         assert draft.questions().get(0).getId() == null;
+        assert "A".equals(draft.answerKeys().get(0));
         history.restore("v1", draft);
         assert "Exam".equals(draft.exam().getTitle());
         System.out.println("Builder, Prototype and Memento checks passed.");

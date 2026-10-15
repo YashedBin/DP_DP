@@ -56,4 +56,14 @@ public final class StudentRepository {
             }
         }
     }
+
+    public void setPassword(long id, String hash) throws SQLException {
+        try (Connection connection = database.open();
+                PreparedStatement statement = connection.prepareStatement(
+                        "UPDATE students SET password_hash = ? WHERE id = ?")) {
+            statement.setString(1, hash);
+            statement.setLong(2, id);
+            if (statement.executeUpdate() != 1) throw new IllegalArgumentException("Student not found");
+        }
+    }
 }

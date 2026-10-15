@@ -50,7 +50,7 @@ public final class TeacherDashboard extends JFrame {
             return row;
         });
         root.add(new JScrollPane(exams), BorderLayout.CENTER);
-        JPanel actions = new JPanel(new GridLayout(2, 4, 6, 6));
+        JPanel actions = new JPanel(new GridLayout(3, 3, 6, 6));
         JButton refresh = new JButton("Refresh exams");
         JButton add = new JButton("Create exam");
         JButton edit = new JButton("Edit questions");
@@ -59,7 +59,8 @@ public final class TeacherDashboard extends JFrame {
         JButton end = new JButton("End");
         JButton review = new JButton("Review/grade");
         JButton publish = new JButton("Publish grades");
-        for (JButton button : new JButton[]{refresh, add, edit, duplicate, begin, end, review, publish})
+        JButton configure = new JButton("Configure draft");
+        for (JButton button : new JButton[]{refresh, add, configure, edit, duplicate, begin, end, review, publish})
             actions.add(button);
         root.add(actions, BorderLayout.SOUTH);
 
@@ -92,6 +93,21 @@ public final class TeacherDashboard extends JFrame {
             Exam exam = selected(); if (exam == null) return;
             UiTasks.run(this, () -> context.exams().duplicate(teacher, exam.getId()),
                     result -> { UiTasks.show(this, "Copied to exam #" + result.getId()); refresh(); });
+        });
+        configure.addActionListener(e -> {
+            Exam current = selected(); if (current == null) return;
+            if (!"DRAFT".equals(current.getStatus())) {
+                UiTasks.show(this, "Only drafts can be configured"); return;
+            }
+            int length;
+            LocalDateTime scheduled;
+            try {
+                length = Integer.parseInt(minutes.getText().trim());
+                scheduled = LocalDateTime.parse(start.getText().trim());
+            } catch (RuntimeException ex) { UiTasks.show(this, "Check duration and ISO start date/time"); return; }
+            Exam draft = context.exams().prepareDraft(title.getText(), length, scheduled);
+            UiTasks.run(this, () -> { context.exams().configureDraft(teacher, current.getId(), draft); return null; },
+                    ignored -> refresh());
         });
         begin.addActionListener(e -> changeStatus(true));
         end.addActionListener(e -> changeStatus(false));

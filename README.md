@@ -1,85 +1,129 @@
 # EOMS / YDVRC
 
 **Online Examination Management System** — Your Digital Venue for Rigorous Certification.
-Semester 5 Design Patterns Lab project.
+Semester 5 Design Patterns Lab project. This is a single-JVM Java 17+ Swing/AWT
+desktop application backed by PostgreSQL 16 via plain JDBC. There is no server,
+HTTP API, web frontend, Maven or Spring dependency.
 
-## Migration status
+## Build and launch (PowerShell, repository root)
 
-This repository is being rebuilt as a **single-JVM Java 17+ Swing/AWT desktop
-application** with PostgreSQL 16 accessed through plain JDBC. The old Spring
-Boot/Maven server, REST client and browser assets have been removed. The current
-desktop scaffold launches a small window that previews **unsaved** exam drafts.
-JDBC repositories and core services are implemented but not yet exposed in the UI.
-Authentication, complete Swing workflows and ten integrated patterns are still
-to come; the preview itself does not connect to the database.
-
-The intended dependency flow is Swing UI → services/patterns → JDBC repositories
-→ PostgreSQL. Dependencies will be constructed explicitly, with no framework,
-HTTP layer or build tool. The existing driver is `lib/postgresql-42.7.13.jar`.
-
-## What is here now
-
-- `src/com/eoms/model/`: framework-free exam, question, answer, student, teacher
-  and submission models retained from the earlier codebase.
-- `src/com/eoms/Main.java`: Swing entry point; `config/ApplicationContext.java`
-  constructs repositories and services and passes the exam service to the window.
-- `src/com/eoms/config/DatabaseConnection.java`: environment-based JDBC connection helper.
-- `src/com/eoms/repository/`: plain JDBC data access for exams, questions, students,
-  submissions and answers, using prepared statements and closed resources.
-- `src/com/eoms/service/`: exam creation/lifecycle, draft question editing, student
-  registration and transactional submissions; usable independently of Swing.
-- `src/com/eoms/ui/WelcomeFrame.java`: temporary, non-persistent desktop preview.
-- `sql/schema.sql`: the existing tables, moved without changing their definitions.
-- `docs/legacy/`: preserved historical project notes, UML and setup transcript.
-  They describe the former server and are not current run instructions.
-
-To compile and launch in PowerShell (JDK 17+), from the repository root:
+Requires JDK 17+, PostgreSQL 16, and the checked-in driver
+`lib/postgresql-42.7.13.jar`. Ensure `java`, `javac` and `psql` are available.
 
 ```powershell
 New-Item -ItemType Directory -Force out | Out-Null
 javac -d out (Get-ChildItem src -Recurse -Filter *.java).FullName
+javac -cp out -d out (Get-ChildItem tests -Recurse -Filter *.java).FullName
+java -ea -cp "out;lib/postgresql-42.7.13.jar" com.eoms.CoreDomainTest
+java -ea -cp "out;lib/postgresql-42.7.13.jar" com.eoms.CreationalPatternsTest
+java -ea -cp "out;lib/postgresql-42.7.13.jar" com.eoms.GradingPatternsTest
+java -ea -cp "out;lib/postgresql-42.7.13.jar" com.eoms.CoordinationPatternsTest
 java -cp "out;lib/postgresql-42.7.13.jar" com.eoms.Main
 ```
 
-The PostgreSQL driver must be on the runtime classpath for database operations;
-the preview itself needs only the JDK. On non-Windows shells, use `:` instead of
-`;` as the classpath separator. To run the database-independent checks:
+On non-Windows shells, replace `;` with `:` in the classpath. Compilation and
+these tests need no PostgreSQL server; the tests use Java assertions (`-ea`).
+The desktop requires a graphical environment. Operations involving JDBC use
+background workers; errors are shown in the UI rather than blocking the EDT.
+
+For an **opt-in** database integration check, provision a separate `eoms_test`
+database with `sql/schema.sql` and a teacher account with `com.eoms.SetupAccounts`
+using that database's connection variables. Set `EOMS_TEST_DB_URL`,
+`EOMS_TEST_DB_USER`, `EOMS_TEST_DB_PASSWORD`, `EOMS_TEST_TEACHER` and
+`EOMS_TEST_TEACHER_PASSWORD`, then run:
 
 ```powershell
-javac -cp out -d out (Get-ChildItem tests -Recurse -Filter *.java).FullName
-java -ea -cp "out;lib/postgresql-42.7.13.jar" com.eoms.CoreDomainTest
+java -ea -cp "out;lib/postgresql-42.7.13.jar" com.eoms.JdbcIntegrationTest
 ```
 
-## Database preservation
+This test **writes and retains** uniquely named rows; it refuses to run unless
+the URL contains `eoms_test`. Never point it at a populated project database.
 
-No database is modified merely by starting the desktop preview. For a **new** database, create
-`eoms_db` yourself, then explicitly run the schema using PostgreSQL's `psql`:
+## Database setup (explicit; preserves existing rows)
+
+Create a database separately if needed (for example, `eoms_db`). For a **new**
+database only, apply the complete baseline:
 
 ```powershell
-psql -U postgres -d eoms_db -f sql/schema.sql
+psql -v ON_ERROR_STOP=1 -U postgres -d eoms_db -f sql/schema.sql
 ```
 
-The schema uses `CREATE TABLE IF NOT EXISTS` and keeps the existing `students`,
-`exams`, `questions`, `submissions`, `audit_log`, `answers` and `teachers` tables.
-It does **not** upgrade the shape of pre-existing tables. Check your existing
-database before applying future migrations; do not drop tables or reset data.
-No credentials belong in tracked files. A previous database password was
-committed in the removed Spring configuration: **rotate it** if it was real.
+For a database already created by the legacy backend, **do not reset or reload
+the schema**. Back it up, inspect the current columns, then apply this additive
+migration once (it adds credentials, grading columns and a question-key table):
 
-Before using the JDBC services, set these environment variables in the same
-process/terminal that launches Java (example URL and username only):
+```powershell
+psql -v ON_ERROR_STOP=1 -U postgres -d eoms_db -f sql/migrations/001_credentials_and_grading.sql
+```
+
+The baseline uses `CREATE TABLE IF NOT EXISTS` and does **not** upgrade existing
+columns; the migration uses `ADD COLUMN IF NOT EXISTS`. No schema SQL executes
+automatically on application startup. Existing student and teacher rows remain
+in place; their new password hashes are initially null and require deliberate
+account enrollment. The legacy database password was committed in Git history:
+**rotate it** if it was real. Never store new secrets in tracked files.
+
+Set credentials in the terminal that launches Java (example URL and user):
 
 ```powershell
 $env:EOMS_DB_URL = 'jdbc:postgresql://localhost:5432/eoms_db'
 $env:EOMS_DB_USER = 'postgres'
-# Set EOMS_DB_PASSWORD locally to your own password; never commit it.
+$env:EOMS_DB_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host -AsSecureString 'Database password')).Password
 ```
 
-`DatabaseConnection.open()` reports missing settings and connection failures.
-Repositories do not initialize, drop or reset the schema. A submission and its
-answers share a transaction; the exam row is locked during duplicate checking.
-The database operations have **not** been verified against a live PostgreSQL
-instance here. There is no authenticated UI yet: the service-level student-ID
-check only confirms that a row exists, not that the caller owns that identity.
-Do not treat the core services as secure student/teacher entry points until the
-later authorization and question-access milestones are implemented.
+`DatabaseConnection` checks these variables when opening a connection. No
+hardcoded password, automatic database reset or network service is used.
+
+### Accounts
+
+From an interactive console, run the following **after** the schema is applied
+and environment variables are set. This explicitly creates the **first** teacher
+only when `teachers` is empty, prompting for a password without echoing it:
+
+```powershell
+java -cp "out;lib/postgresql-42.7.13.jar" com.eoms.SetupAccounts
+```
+
+If legacy teacher rows already exist, have the database administrator verify
+ownership, then set the selected existing teacher's password with
+`com.eoms.SetupAccounts --teacher USERNAME`. To enroll an **existing** student,
+use `com.eoms.SetupAccounts --student ID` only after verifying that student's
+identity. A new student can register through the login window. The CLI's
+database credentials grant administrator-level account setup: keep them private.
+These local login controls are appropriate for a lab desktop app, not a hardened
+multi-user production deployment.
+
+## Workflows and boundaries
+
+- Teacher: log in; create/configure drafts; add/edit/delete questions and MCQ
+  keys; duplicate exams and their keys; save and restore in-session named draft
+  snapshots; start/end scheduled exams; review answers, award manual marks,
+  calculate grades and publish only after all submissions are graded.
+- Student: register/log in, list ongoing exams, enter an eligible exam, answer
+  MCQ/subjective/coding questions, submit once, receive confirmation and see
+  only published grades. Blank subjective/coding responses receive zero;
+  nonblank responses need a teacher mark. Missing MCQ keys also require review.
+- Draft snapshots are **in memory for the open editor session**. Restoring a
+  snapshot replaces stored draft questions in a transaction with new IDs; it
+  does not restore submissions, grades or history. Draft question content and
+  MCQ keys are restored with new IDs. Duplication also copies existing MCQ keys.
+
+The UI calls services, services coordinate focused pattern objects and JDBC
+repositories, and `ApplicationContext` constructs dependencies explicitly.
+`src/com/eoms/patterns/` contains Builder (exam creation), Prototype (exam
+duplication), Memento (draft history), Strategy (grading), Template Method
+(grading sequence), Chain of Responsibility (submission checks), Mediator
+(lifecycle), Observer (transactional audit and Swing refresh), Proxy (student
+question access) and Bridge (console/Swing notifications). PostgreSQL's
+`audit_log` retains lifecycle and submission events.
+
+`docs/legacy/` preserves the former Spring-era notes and diagrams **as
+historical references only**. They are not build or runtime instructions for
+this application.
+
+## Verification status
+
+The tests above exercise domain and pattern behavior **without a database**.
+The Swing screens and PostgreSQL CRUD have **not been verified end-to-end in
+this environment** because no database credentials were supplied. Test with a
+dedicated database before treating the application as ready for demonstration.

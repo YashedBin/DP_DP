@@ -78,12 +78,6 @@ public final class ExamRepository {
         }
     }
 
-    public boolean transition(long id, String from, String to) throws SQLException {
-        try (Connection connection = database.open()) {
-            return transition(connection, id, from, to);
-        }
-    }
-
     public void updateDraft(Connection connection, long id, Exam draft) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "UPDATE exams SET title = ?, duration_minutes = ?, start_time = ?, end_time = ? "

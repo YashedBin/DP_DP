@@ -80,11 +80,14 @@ public final class JdbcExamService implements ExamService {
             try {
                 Exam source = exams.findById(connection, id);
                 if (source == null) throw new IllegalArgumentException("Exam not found");
-                ExamPrototype.Copy copy = ExamPrototype.duplicate(source, questions.findByExamId(connection, id));
+                List<Question> originals = questions.findByExamId(connection, id);
+                ExamPrototype.Copy copy = ExamPrototype.duplicate(source, originals);
                 Exam newExam = exams.save(connection, copy.exam());
-                for (Question question : copy.questions()) {
+                for (int index = 0; index < copy.questions().size(); index++) {
+                    Question question = copy.questions().get(index);
                     question.setExamId(newExam.getId());
                     questions.save(connection, question);
+                    questions.copyKey(connection, originals.get(index).getId(), question.getId());
                 }
                 connection.commit();
                 return newExam;
@@ -113,15 +116,30 @@ public final class JdbcExamService implements ExamService {
                 }
                 exams.updateDraft(connection, id, valid);
                 questions.deleteForDraft(connection, id);
-                for (Question question : detached.questions()) {
+                List<String> keys = draft.answerKeys();
+                for (int index = 0; index < detached.questions().size(); index++) {
+                    Question question = detached.questions().get(index);
                     question.setExamId(id);
                     questions.save(connection, question);
+                    questions.saveKey(connection, question.getId(), keys.get(index));
                 }
                 connection.commit();
             } catch (SQLException | RuntimeException ex) {
                 try { connection.rollback(); } catch (SQLException failure) { ex.addSuppressed(failure); }
                 throw ex;
             }
+        }
+    }
+
+    @Override
+    public void configureDraft(TeacherSession teacher, long id, Exam draft) throws SQLException {
+        requireTeacher(teacher);
+        if (draft == null) throw new IllegalArgumentException("Draft required");
+        Exam valid = new com.eoms.patterns.builder.ExamBuilder(clock).title(draft.getTitle())
+                .durationMinutes(draft.getDurationMinutes()).startTime(draft.getStartTime())
+                .endTime(draft.getEndTime()).build();
+        try (Connection connection = database.open()) {
+            exams.updateDraft(connection, id, valid);
         }
     }
 

@@ -21,6 +21,7 @@ public final class GradingPatternsTest {
         assert strategy.evaluate(mcq, "4", null, null) == null;
         assert new ManualStrategy().evaluate(mcq, "some text", null, null) == null;
         assert new ManualStrategy().evaluate(mcq, "some text", null, 3.0) == 3.0;
+        assert new ManualStrategy().evaluate(mcq, "", null, null) == 0.0;
         String stored = PasswordHashes.hash("correct-password");
         assert PasswordHashes.matches("correct-password", stored);
         assert !PasswordHashes.matches("wrong-password", stored);

@@ -6,11 +6,15 @@ import com.eoms.patterns.strategy.GradingStrategy;
 import com.eoms.patterns.strategy.ManualStrategy;
 import com.eoms.patterns.strategy.McqStrategy;
 import com.eoms.patterns.templatemethod.GradingWorkflow;
+import com.eoms.patterns.observer.ExamEvent;
+import com.eoms.patterns.observer.ExamEventPublisher;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +22,16 @@ import java.util.Map;
 /** Template Method defines the flow; Strategy chooses per-question evaluation. */
 public final class GradingService extends GradingWorkflow<List<GradingService.Row>, List<Double>> {
     private final DatabaseConnection database;
+    private final ExamEventPublisher events;
+    private final Clock clock;
     private final Map<String, GradingStrategy> strategies = Map.of(
             "MCQ", new McqStrategy(), "SUBJECTIVE", new ManualStrategy(), "CODING", new ManualStrategy());
 
-    public GradingService(DatabaseConnection database) { this.database = database; }
+    public GradingService(DatabaseConnection database, ExamEventPublisher events, Clock clock) {
+        this.database = database;
+        this.events = events;
+        this.clock = clock;
+    }
 
     public Result gradeForTeacher(TeacherSession teacher, long submissionId) throws SQLException {
         requireTeacher(teacher);
@@ -31,10 +41,12 @@ public final class GradingService extends GradingWorkflow<List<GradingService.Ro
     @Override
     protected void validate(long submissionId) throws SQLException {
         try (Connection connection = database.open();
-                PreparedStatement statement = connection.prepareStatement("SELECT 1 FROM submissions WHERE id = ?")) {
+                PreparedStatement statement = connection.prepareStatement(
+                        "SELECT 1 FROM submissions s JOIN exams e ON e.id = s.exam_id "
+                        + "WHERE s.id = ? AND NOT e.grades_published")) {
             statement.setLong(1, submissionId);
             try (ResultSet row = statement.executeQuery()) {
-                if (!row.next()) throw new IllegalArgumentException("Submission not found");
+                if (!row.next()) throw new IllegalArgumentException("Submission missing or grades already published");
             }
         }
     }
@@ -86,12 +98,15 @@ public final class GradingService extends GradingWorkflow<List<GradingService.Ro
     protected Result produceResult(long submissionId, Double score) throws SQLException {
         try (Connection connection = database.open();
                 PreparedStatement statement = connection.prepareStatement(
-                        "UPDATE submissions SET score = ?, status = ? WHERE id = ?")) {
+                        "UPDATE submissions s SET score = ?, status = ? FROM exams e "
+                        + "WHERE s.id = ? AND e.id = s.exam_id AND NOT e.grades_published")) {
             if (score == null) statement.setNull(1, Types.DOUBLE);
             else statement.setDouble(1, score);
             statement.setString(2, score == null ? "NEEDS_REVIEW" : "GRADED");
             statement.setLong(3, submissionId);
-            statement.executeUpdate();
+            if (statement.executeUpdate() != 1) {
+                throw new IllegalStateException("Submission missing or grades already published");
+            }
         }
         return new Result(submissionId, score, score == null);
     }
@@ -101,8 +116,9 @@ public final class GradingService extends GradingWorkflow<List<GradingService.Ro
         if (!Double.isFinite(marks) || marks < 0) throw new IllegalArgumentException("Invalid marks");
         try (Connection connection = database.open();
                 PreparedStatement statement = connection.prepareStatement(
-                        "UPDATE answers a SET awarded_marks = ? FROM questions q "
-                        + "WHERE a.id = ? AND a.question_id = q.id AND q.type IN ('SUBJECTIVE','CODING') "
+                        "UPDATE answers a SET awarded_marks = ? FROM questions q, exams e "
+                        + "WHERE a.id = ? AND a.question_id = q.id AND e.id = q.exam_id "
+                        + "AND NOT e.grades_published AND q.type IN ('SUBJECTIVE','CODING') "
                         + "AND ? <= q.marks")) {
             statement.setDouble(1, marks);
             statement.setLong(2, answerId);
@@ -130,16 +146,26 @@ public final class GradingService extends GradingWorkflow<List<GradingService.Ro
 
     public void publish(TeacherSession teacher, long examId) throws SQLException {
         requireTeacher(teacher);
-        try (Connection connection = database.open();
-                PreparedStatement statement = connection.prepareStatement(
+        ExamEvent event = new ExamEvent(ExamEvent.Type.EXAM_PUBLISHED, examId, null,
+                LocalDateTime.now(clock));
+        try (Connection connection = database.open()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(
                         "UPDATE exams e SET grades_published = TRUE WHERE e.id = ? AND e.status = 'ENDED' "
                         + "AND NOT EXISTS (SELECT 1 FROM submissions s WHERE s.exam_id = e.id "
                         + "AND s.status <> 'GRADED')")) {
-            statement.setLong(1, examId);
-            if (statement.executeUpdate() != 1) {
-                throw new IllegalStateException("End the exam and grade every submission before publishing");
+                statement.setLong(1, examId);
+                if (statement.executeUpdate() != 1) {
+                    throw new IllegalStateException("End the exam and grade every submission before publishing");
+                }
+                events.publish(event, connection);
+                connection.commit();
+            } catch (SQLException | RuntimeException ex) {
+                try { connection.rollback(); } catch (SQLException failure) { ex.addSuppressed(failure); }
+                throw ex;
             }
         }
+        events.afterCommit(event);
     }
 
     private static void requireTeacher(TeacherSession teacher) {

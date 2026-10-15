@@ -23,4 +23,6 @@ public interface ExamService {
     Exam duplicate(TeacherSession teacher, long id) throws SQLException;
 
     void restoreDraft(TeacherSession teacher, long id, ExamDraft draft) throws SQLException;
+
+    void configureDraft(TeacherSession teacher, long id, Exam draft) throws SQLException;
 }

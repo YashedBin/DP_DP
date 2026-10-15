@@ -37,8 +37,11 @@ public final class ApplicationContext {
     private final DesktopChannel desktopChannel;
 
     public ApplicationContext() {
-        Clock clock = Clock.systemDefaultZone();
-        DatabaseConnection database = new DatabaseConnection();
+        this(new DatabaseConnection(), Clock.systemDefaultZone());
+    }
+
+    /** Explicit injection point for a dedicated test database and deterministic clock. */
+    public ApplicationContext(DatabaseConnection database, Clock clock) {
         ExamRepository exams = new ExamRepository(database);
         QuestionRepository questions = new QuestionRepository(database);
         StudentRepository students = new StudentRepository(database);
@@ -56,7 +59,7 @@ public final class ApplicationContext {
         teacherService = new TeacherService(new TeacherRepository(database));
         submissionService = new SubmissionService(database, exams, questions, students, submissions, answers,
                 clock, events, notifications);
-        gradingService = new GradingService(database);
+        gradingService = new GradingService(database, events, clock);
     }
 
     public ExamService exams() { return examService; }
