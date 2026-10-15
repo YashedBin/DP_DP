@@ -5,14 +5,13 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public final class DraftExamService implements ExamService {
+public final class DraftExamService {
     private final Clock clock;
 
     public DraftExamService(Clock clock) {
         this.clock = Objects.requireNonNull(clock);
     }
 
-    @Override
     public Exam prepareDraft(String title, int durationMinutes, LocalDateTime startTime) {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("Exam title is required");
@@ -24,4 +23,5 @@ public final class DraftExamService implements ExamService {
         return new Exam(null, title.trim(), durationMinutes, start,
                 start.plusMinutes(durationMinutes), "DRAFT");
     }
+
 }
