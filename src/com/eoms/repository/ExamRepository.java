@@ -79,8 +79,13 @@ public final class ExamRepository {
     }
 
     public boolean transition(long id, String from, String to) throws SQLException {
-        try (Connection connection = database.open();
-                PreparedStatement statement = connection.prepareStatement(
+        try (Connection connection = database.open()) {
+            return transition(connection, id, from, to);
+        }
+    }
+
+    public boolean transition(Connection connection, long id, String from, String to) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
                         "UPDATE exams SET status = ? WHERE id = ? AND status = ?")) {
             statement.setString(1, to);
             statement.setLong(2, id);

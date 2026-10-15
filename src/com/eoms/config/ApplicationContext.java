@@ -7,6 +7,14 @@ import com.eoms.service.QuestionService;
 import com.eoms.service.StudentService;
 import com.eoms.service.SubmissionService;
 import com.eoms.service.GradingService;
+import com.eoms.patterns.bridge.ConsoleChannel;
+import com.eoms.patterns.bridge.ImmediateNotification;
+import com.eoms.patterns.bridge.Notification;
+import com.eoms.patterns.mediator.ExamLifecycleMediator;
+import com.eoms.patterns.observer.AuditLogObserver;
+import com.eoms.patterns.observer.ExamEventPublisher;
+import com.eoms.patterns.proxy.QuestionBankProxy;
+import com.eoms.patterns.proxy.RealQuestionBank;
 import com.eoms.repository.AnswerRepository;
 import com.eoms.repository.ExamRepository;
 import com.eoms.repository.QuestionRepository;
@@ -22,6 +30,7 @@ public final class ApplicationContext {
     private final StudentService studentService;
     private final SubmissionService submissionService;
     private final GradingService gradingService;
+    private final ExamEventPublisher events;
 
     public ApplicationContext() {
         Clock clock = Clock.systemDefaultZone();
@@ -31,10 +40,16 @@ public final class ApplicationContext {
         StudentRepository students = new StudentRepository(database);
         SubmissionRepository submissions = new SubmissionRepository(database);
         AnswerRepository answers = new AnswerRepository();
-        examService = new JdbcExamService(new DraftExamService(clock), exams, questions, database, clock);
-        questionService = new QuestionService(exams, questions);
+        events = new ExamEventPublisher();
+        events.subscribe(new AuditLogObserver());
+        Notification notifications = new ImmediateNotification(new ConsoleChannel());
+        ExamLifecycleMediator lifecycle = new ExamLifecycleMediator(database, exams, events, notifications, clock);
+        examService = new JdbcExamService(new DraftExamService(clock), exams, questions, database, clock, lifecycle);
+        questionService = new QuestionService(exams, questions,
+                new QuestionBankProxy(database, exams, students, submissions, new RealQuestionBank(questions), clock));
         studentService = new StudentService(students);
-        submissionService = new SubmissionService(database, exams, questions, students, submissions, answers, clock);
+        submissionService = new SubmissionService(database, exams, questions, students, submissions, answers,
+                clock, events, notifications);
         gradingService = new GradingService(database);
     }
 
@@ -43,6 +58,7 @@ public final class ApplicationContext {
     public StudentService students() { return studentService; }
     public SubmissionService submissions() { return submissionService; }
     public GradingService grading() { return gradingService; }
+    public ExamEventPublisher events() { return events; }
 
     /** Called on the Swing event dispatch thread. */
     public WelcomeFrame createWelcomeFrame() {

@@ -4,6 +4,7 @@ import com.eoms.model.Exam;
 import com.eoms.model.Question;
 import com.eoms.repository.ExamRepository;
 import com.eoms.repository.QuestionRepository;
+import com.eoms.patterns.proxy.QuestionBank;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
@@ -12,10 +13,21 @@ import java.util.Locale;
 public final class QuestionService {
     private final ExamRepository exams;
     private final QuestionRepository questions;
+    private final QuestionBank studentQuestions;
 
     public QuestionService(ExamRepository exams, QuestionRepository questions) {
+        this(exams, questions, null);
+    }
+
+    public QuestionService(ExamRepository exams, QuestionRepository questions, QuestionBank studentQuestions) {
         this.exams = exams;
         this.questions = questions;
+        this.studentQuestions = studentQuestions;
+    }
+
+    public List<Question> listForStudent(long examId, StudentSession student) throws SQLException {
+        if (studentQuestions == null) throw new IllegalStateException("Student question access is not configured");
+        return studentQuestions.forStudent(examId, student);
     }
 
     public List<Question> listForEditor(long examId) throws SQLException {

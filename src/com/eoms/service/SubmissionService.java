@@ -10,6 +10,9 @@ import com.eoms.patterns.chainofresponsibility.DuplicateSubmissionHandler;
 import com.eoms.patterns.chainofresponsibility.ExamWindowHandler;
 import com.eoms.patterns.chainofresponsibility.SubmissionContext;
 import com.eoms.patterns.chainofresponsibility.SubmissionHandler;
+import com.eoms.patterns.bridge.Notification;
+import com.eoms.patterns.observer.ExamEvent;
+import com.eoms.patterns.observer.ExamEventPublisher;
 import com.eoms.repository.AnswerRepository;
 import com.eoms.repository.ExamRepository;
 import com.eoms.repository.QuestionRepository;
@@ -32,9 +35,12 @@ public final class SubmissionService {
     private final AnswerRepository answers;
     private final Clock clock;
     private final SubmissionHandler validation;
+    private final ExamEventPublisher events;
+    private final Notification notifications;
 
     public SubmissionService(DatabaseConnection database, ExamRepository exams, QuestionRepository questions,
-            StudentRepository students, SubmissionRepository submissions, AnswerRepository answers, Clock clock) {
+            StudentRepository students, SubmissionRepository submissions, AnswerRepository answers, Clock clock,
+            ExamEventPublisher events, Notification notifications) {
         this.database = database;
         this.exams = exams;
         this.questions = questions;
@@ -42,6 +48,8 @@ public final class SubmissionService {
         this.submissions = submissions;
         this.answers = answers;
         this.clock = clock;
+        this.events = events;
+        this.notifications = notifications;
         SubmissionHandler auth = new AuthCheckHandler(students);
         auth.then(new ExamWindowHandler()).then(new DuplicateSubmissionHandler(submissions));
         this.validation = auth;
@@ -49,6 +57,8 @@ public final class SubmissionService {
 
     public Submission submit(long examId, StudentSession student, Map<Long, String> responses) throws SQLException {
         if (responses == null) throw new IllegalArgumentException("Answers must not be null");
+        Submission saved;
+        ExamEvent event;
         try (Connection connection = database.open()) {
             connection.setAutoCommit(false);
             try {
@@ -69,13 +79,14 @@ public final class SubmissionService {
                     }
                 }
 
-                Submission saved = submissions.save(connection,
+                saved = submissions.save(connection,
                         new Submission(null, examId, student.studentId(), now, "SUBMITTED", null));
                 for (Map.Entry<Long, String> response : responses.entrySet()) {
                     answers.save(connection, new Answer(null, saved.getId(), response.getKey(), response.getValue()));
                 }
+                event = new ExamEvent(ExamEvent.Type.EXAM_SUBMITTED, examId, student.studentId(), now);
+                events.publish(event, connection);
                 connection.commit();
-                return saved;
             } catch (SQLException | RuntimeException ex) {
                 try {
                     connection.rollback();
@@ -85,6 +96,9 @@ public final class SubmissionService {
                 throw ex;
             }
         }
+        events.afterCommit(event);
+        notifications.send("student-" + student.studentId(), "Submission #" + saved.getId() + " received");
+        return saved;
     }
 
     /** Intended for teacher review; role authorization is not yet implemented. */

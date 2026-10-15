@@ -4,6 +4,7 @@ import com.eoms.model.Exam;
 import com.eoms.model.Question;
 import com.eoms.config.DatabaseConnection;
 import com.eoms.patterns.prototype.ExamPrototype;
+import com.eoms.patterns.mediator.ExamLifecycleMediator;
 import com.eoms.repository.ExamRepository;
 import com.eoms.repository.QuestionRepository;
 import java.sql.Connection;
@@ -19,14 +20,16 @@ public final class JdbcExamService implements ExamService {
     private final Clock clock;
     private final DatabaseConnection database;
     private final QuestionRepository questions;
+    private final ExamLifecycleMediator lifecycle;
 
     public JdbcExamService(DraftExamService drafts, ExamRepository exams, QuestionRepository questions,
-            DatabaseConnection database, Clock clock) {
+            DatabaseConnection database, Clock clock, ExamLifecycleMediator lifecycle) {
         this.drafts = Objects.requireNonNull(drafts);
         this.exams = Objects.requireNonNull(exams);
         this.clock = Objects.requireNonNull(clock);
         this.database = Objects.requireNonNull(database);
         this.questions = Objects.requireNonNull(questions);
+        this.lifecycle = Objects.requireNonNull(lifecycle);
     }
 
     @Override
@@ -57,24 +60,12 @@ public final class JdbcExamService implements ExamService {
 
     @Override
     public void start(long id) throws SQLException {
-        Exam exam = exams.findById(id);
-        if (exam == null || !"DRAFT".equals(exam.getStatus())) {
-            throw new IllegalStateException("Only an existing draft exam can be started");
-        }
-        LocalDateTime now = LocalDateTime.now(clock);
-        if (now.isBefore(exam.getStartTime()) || now.isAfter(exam.getEndTime())) {
-            throw new IllegalStateException("Exam is outside its scheduled window");
-        }
-        if (!exams.transition(id, "DRAFT", "ONGOING")) {
-            throw new IllegalStateException("Exam is no longer a draft");
-        }
+        lifecycle.start(id);
     }
 
     @Override
     public void end(long id) throws SQLException {
-        if (!exams.transition(id, "ONGOING", "ENDED")) {
-            throw new IllegalStateException("Only an ongoing exam can be ended");
-        }
+        lifecycle.end(id);
     }
 
     @Override
