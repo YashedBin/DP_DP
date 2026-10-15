@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class SubjectiveQuestionFactory implements QuestionFactory {
 
     @Override
-    public Question createQuestion(Long examId, String text, int marks) {
-        return new Question(null, examId, "SUBJECTIVE", text, marks);
+    public Question createQuestion(Long examId, String text, int marks, String extra) {
+        return new Question(null, examId, "SUBJECTIVE", text, marks, null);
     }
 }

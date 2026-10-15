@@ -6,15 +6,17 @@ public class Question {
     private String type;
     private String text;
     private int marks;
+    private String options;
 
     public Question() {}
 
-    public Question(Long id, Long examId, String type, String text, int marks) {
+    public Question(Long id, Long examId, String type, String text, int marks, String options) {
         this.id = id;
         this.examId = examId;
         this.type = type;
         this.text = text;
         this.marks = marks;
+        this.options = options;
     }
 
     public Long getId() { return id; }
@@ -31,4 +33,7 @@ public class Question {
 
     public int getMarks() { return marks; }
     public void setMarks(int marks) { this.marks = marks; }
+
+    public String getOptions() { return options; }
+    public void setOptions(String options) { this.options = options; }
 }

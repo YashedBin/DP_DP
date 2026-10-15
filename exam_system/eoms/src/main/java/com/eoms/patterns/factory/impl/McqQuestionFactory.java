@@ -8,7 +8,10 @@ import org.springframework.stereotype.Component;
 public class McqQuestionFactory implements QuestionFactory {
 
     @Override
-    public Question createQuestion(Long examId, String text, int marks) {
-        return new Question(null, examId, "MCQ", text, marks);
+    public Question createQuestion(Long examId, String text, int marks, String extra) {
+        if (extra == null || extra.isBlank()) {
+            throw new IllegalArgumentException("MCQ needs comma-separated options");
+        }
+        return new Question(null, examId, "MCQ", text, marks, extra);
     }
 }

@@ -34,6 +34,9 @@ public class ExamService {
     }
 
     public void startExam(Long id) {
+        if (examRepository.findById(id) == null) {
+            throw new IllegalStateException("Exam #" + id + " does not exist");
+        }
         examRepository.updateStatus(id, "ONGOING");
         eventPublisher.publish(new ExamEvent(
                 ExamEvent.Type.EXAM_STARTED, id, null, ExamClock.getInstance().now(), "Exam started"

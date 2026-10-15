@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS questions (
     exam_id BIGINT NOT NULL REFERENCES exams(id),
     type VARCHAR(20) NOT NULL,
     text TEXT NOT NULL,
-    marks INT NOT NULL
+    marks INT NOT NULL,
+    options TEXT
 );
 
 CREATE TABLE IF NOT EXISTS submissions (
@@ -37,4 +38,16 @@ CREATE TABLE IF NOT EXISTS audit_log (
     student_id BIGINT,
     logged_at TIMESTAMP NOT NULL,
     details TEXT
+);
+
+CREATE TABLE IF NOT EXISTS answers (
+    id BIGSERIAL PRIMARY KEY,
+    submission_id BIGINT NOT NULL REFERENCES submissions(id),
+    question_id BIGINT NOT NULL REFERENCES questions(id),
+    answer_text TEXT
+);
+
+CREATE TABLE IF NOT EXISTS teachers (
+    id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE
 );

@@ -26,12 +26,12 @@ public class QuestionService {
         this.questionRepository = questionRepository;
     }
 
-    public Question createQuestion(Long examId, String type, String text, int marks) {
+    public Question createQuestion(Long examId, String type, String text, int marks, String extra) {
         QuestionFactory factory = questionFactories.get(type.toUpperCase());
         if (factory == null) {
             throw new IllegalArgumentException("Unknown question type: " + type);
         }
-        Question question = factory.createQuestion(examId, text, marks);
+        Question question = factory.createQuestion(examId, text, marks, extra);
         return questionRepository.save(question);
     }
 

@@ -1,0 +1,362 @@
+:root {
+  --bg-dark: #1e1e26;
+  --bg-card: #2a2a36;
+  --bg-input: #373746;
+  --accent: #6388fa;
+  --accent-hover: #789bff;
+  --success: #50c878;
+  --error: #f05555;
+  --text-primary: #e6e6f0;
+  --text-secondary: #9b9baf;
+  --divider: #3c3c4e;
+  --teacher-badge: #58a6ff;
+  --student-badge: #ffa532;
+  --mcq-tag: #6388fa;
+  --subj-tag: #b482ff;
+  --code-tag: #50c8a0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+
+.card h3 {
+  margin-top: 0;
+  font-size: 15px;
+}
+
+/* ---------- Login screen: flexbox split layout ---------- */
+
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.login-shell {
+  width: 100%;
+  max-width: 720px;
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-brand h1 {
+  font-size: 34px;
+  margin: 0 0 4px 0;
+  letter-spacing: 1px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 0;
+}
+
+.login-panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.login-panel {
+  flex: 1 1 260px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 0 0 16px 0;
+}
+
+.login-panel input {
+  margin-bottom: 14px;
+}
+
+.full-width {
+  width: 100%;
+  margin-right: 0;
+}
+
+.login-error {
+  text-align: center;
+  margin-top: 16px;
+  min-height: 16px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.teacher-badge {
+  color: var(--teacher-badge);
+}
+
+.student-badge {
+  color: var(--student-badge);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  margin-bottom: 10px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* ---------- Flexbox form rows ---------- */
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.field-row label {
+  width: 120px;
+  min-width: 120px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.field-row input,
+.field-row select {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.field-row.compact {
+  flex: 1;
+}
+
+.field-row.compact label {
+  width: 60px;
+  min-width: 60px;
+}
+
+.question-form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Teacher dashboard: two-column card grid ---------- */
+
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.flex-card {
+  flex: 1 1 320px;
+}
+
+.btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--accent-hover);
+}
+
+.btn.success {
+  background: var(--success);
+}
+
+.btn.success:hover {
+  filter: brightness(1.1);
+}
+
+.btn.back {
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-weight: normal;
+}
+
+.status {
+  font-size: 12px;
+}
+
+.status.ok {
+  color: var(--success);
+}
+
+.status.error {
+  color: var(--error);
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--divider);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.header-right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pill {
+  font-size: 12px;
+  background: var(--bg-input);
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: var(--text-secondary);
+}
+
+main {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.question-list {
+  margin-top: 12px;
+  background: var(--bg-input);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.question-list div {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.question-list div:last-child {
+  border-bottom: none;
+}
+
+.q-card {
+  background: var(--bg-dark);
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 10px;
+}
+
+.q-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.q-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.q-tag.mcq {
+  color: var(--mcq-tag);
+}
+
+.q-tag.subjective {
+  color: var(--subj-tag);
+}
+
+.q-tag.coding {
+  color: var(--code-tag);
+}
+
+.q-marks {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.q-text {
+  margin-bottom: 10px;
+}
+
+.q-option {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.q-option input {
+  width: auto;
+  margin-right: 8px;
+  margin-bottom: 0;
+}
+
+.timer {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--student-badge);
+  margin: 8px 0;
+}

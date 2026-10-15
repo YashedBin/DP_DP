@@ -27,6 +27,7 @@ public class QuestionController {
         String type = (String) body.get("type");
         String text = (String) body.get("text");
         int marks = ((Number) body.get("marks")).intValue();
-        return questionService.createQuestion(examId, type, text, marks);
+        String extra = (String) body.get("extra");
+        return questionService.createQuestion(examId, type, text, marks, extra);
     }
 }

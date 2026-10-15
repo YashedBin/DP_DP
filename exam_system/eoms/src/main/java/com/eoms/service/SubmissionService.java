@@ -1,5 +1,6 @@
 package com.eoms.service;
 
+import com.eoms.entity.Answer;
 import com.eoms.entity.Exam;
 import com.eoms.entity.Submission;
 import com.eoms.patterns.bridge.ImmediateSender;
@@ -10,14 +11,19 @@ import com.eoms.patterns.chainofresponsibility.TimeWindowCheckHandler;
 import com.eoms.patterns.observer.ExamEvent;
 import com.eoms.patterns.observer.ExamEventPublisher;
 import com.eoms.patterns.singleton.ExamClock;
+import com.eoms.repository.AnswerRepository;
 import com.eoms.repository.ExamRepository;
 import com.eoms.repository.SubmissionRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class SubmissionService {
 
     private final SubmissionRepository submissionRepository;
+    private final AnswerRepository answerRepository;
     private final ExamRepository examRepository;
     private final ExamEventPublisher eventPublisher;
     private final ImmediateSender notificationSender;
@@ -27,6 +33,7 @@ public class SubmissionService {
 
     public SubmissionService(
             SubmissionRepository submissionRepository,
+            AnswerRepository answerRepository,
             ExamRepository examRepository,
             ExamEventPublisher eventPublisher,
             ImmediateSender notificationSender,
@@ -35,6 +42,7 @@ public class SubmissionService {
             AlreadySubmittedHandler alreadySubmittedHandler
     ) {
         this.submissionRepository = submissionRepository;
+        this.answerRepository = answerRepository;
         this.examRepository = examRepository;
         this.eventPublisher = eventPublisher;
         this.notificationSender = notificationSender;
@@ -45,8 +53,11 @@ public class SubmissionService {
         authCheckHandler.setNext(timeWindowCheckHandler).setNext(alreadySubmittedHandler);
     }
 
-    public Submission submit(Long examId, Long studentId) {
+    public Submission submit(Long examId, Long studentId, List<Map<String, Object>> answers) {
         Exam exam = examRepository.findById(examId);
+        if (exam == null) {
+            throw new IllegalStateException("Exam #" + examId + " does not exist");
+        }
         SubmissionContext context = new SubmissionContext(exam, studentId);
 
         authCheckHandler.handle(context);
@@ -58,6 +69,14 @@ public class SubmissionService {
         Submission submission = new Submission(null, examId, studentId, ExamClock.getInstance().now(), "SUBMITTED", null);
         Submission saved = submissionRepository.save(submission);
 
+        if (answers != null) {
+            for (Map<String, Object> a : answers) {
+                Long questionId = Long.valueOf(a.get("questionId").toString());
+                String answerText = a.get("answer") == null ? "" : a.get("answer").toString();
+                answerRepository.save(new Answer(null, saved.getId(), questionId, answerText));
+            }
+        }
+
         eventPublisher.publish(new ExamEvent(
                 ExamEvent.Type.EXAM_SUBMITTED, examId, studentId, ExamClock.getInstance().now(), "Submission recorded"
         ));
@@ -65,5 +84,9 @@ public class SubmissionService {
         notificationSender.notify("student-" + studentId, "Your submission for exam " + examId + " was received.");
 
         return saved;
+    }
+
+    public List<Submission> getSubmissions(Long examId) {
+        return submissionRepository.findByExamId(examId);
     }
 }

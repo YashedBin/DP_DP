@@ -24,7 +24,8 @@ public class QuestionRepository {
             rs.getLong("exam_id"),
             rs.getString("type"),
             rs.getString("text"),
-            rs.getInt("marks")
+            rs.getInt("marks"),
+            rs.getString("options")
     );
 
     public List<Question> findByExamId(Long examId) {
@@ -35,13 +36,14 @@ public class QuestionRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO questions (exam_id, type, text, marks) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO questions (exam_id, type, text, marks, options) VALUES (?, ?, ?, ?, ?)",
                     new String[]{"id"}
             );
             ps.setLong(1, question.getExamId());
             ps.setString(2, question.getType());
             ps.setString(3, question.getText());
             ps.setInt(4, question.getMarks());
+            ps.setString(5, question.getOptions());
             return ps;
         }, keyHolder);
         question.setId(keyHolder.getKey().longValue());

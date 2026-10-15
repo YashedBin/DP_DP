@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>EOMS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div id="login-screen" class="screen login-screen">
+    <div class="login-shell">
+      <div class="login-brand">
+        <h1>EOMS</h1>
+        <p class="subtitle">Online Examination Management System</p>
+      </div>
+
+      <div class="login-panels">
+        <div class="login-panel">
+          <h2 class="badge teacher-badge">Teacher</h2>
+          <p class="panel-hint">Manage exams and questions</p>
+          <input id="teacher-username" type="text" placeholder="Username">
+          <button class="btn accent full-width" onclick="loginTeacher()">Continue as Teacher</button>
+        </div>
+
+        <div class="login-panel">
+          <h2 class="badge student-badge">Student</h2>
+          <p class="panel-hint">View, answer, and submit exams</p>
+          <input id="student-rollno" type="text" placeholder="Roll No (numeric ID)">
+          <button class="btn accent full-width" onclick="loginStudent()">Continue as Student</button>
+        </div>
+      </div>
+
+      <p id="login-error" class="status error login-error"></p>
+    </div>
+  </div>
+
+  <div id="teacher-screen" class="screen hidden">
+    <header>
+      <button class="btn back" onclick="goToLogin()">&larr; Back</button>
+      <h2>Teacher Dashboard</h2>
+      <div class="header-right">
+        <span id="teacher-exam-label" class="pill"></span>
+        <span id="teacher-user-label" class="pill teacher-badge"></span>
+      </div>
+    </header>
+
+    <main>
+      <div class="card-grid">
+        <section class="card flex-card">
+          <h3>1. Create Exam</h3>
+          <div class="field-row"><label>Title</label><input id="exam-title" value="DBMS Midterm"></div>
+          <div class="field-row"><label>Duration (min)</label><input id="exam-duration" value="60"></div>
+          <div class="field-row"><label>Start Time</label><input id="exam-start" type="datetime-local"></div>
+          <div class="field-row"><label>End Time</label><input id="exam-end" type="datetime-local"></div>
+          <div class="card-footer">
+            <button class="btn accent" onclick="createExam()">Create Exam</button>
+            <span id="create-status" class="status"></span>
+          </div>
+        </section>
+
+        <section class="card flex-card">
+          <h3>2. Exam Control</h3>
+          <div class="field-row"><label>Exam ID</label><input id="control-exam-id"></div>
+          <div class="card-footer">
+            <button class="btn accent" onclick="loadExam()">Load</button>
+            <button class="btn success" onclick="startExam()">Start Exam</button>
+            <span id="control-status" class="status"></span>
+          </div>
+        </section>
+      </div>
+
+      <section class="card">
+        <h3>3. Add Questions</h3>
+        <div class="question-form-row">
+          <div class="field-row compact"><label>Type</label>
+            <select id="question-type">
+              <option>MCQ</option>
+              <option>SUBJECTIVE</option>
+              <option>CODING</option>
+            </select>
+          </div>
+          <div class="field-row compact"><label>Marks</label><input id="question-marks" value="5"></div>
+        </div>
+        <div class="field-row"><label>Question Text</label><input id="question-text"></div>
+        <div class="field-row"><label>Extra</label><input id="question-extra"
+            placeholder="Options (comma-separated) for MCQ, language for Coding"></div>
+        <div class="card-footer">
+          <button class="btn accent" onclick="addQuestion()">Add Question</button>
+          <span id="question-status" class="status"></span>
+        </div>
+        <div id="question-list" class="question-list"></div>
+      </section>
+
+      <section class="card">
+        <h3>4. View Submissions</h3>
+        <div class="field-row"><label>Exam ID</label><input id="submissions-exam-id"></div>
+        <div class="card-footer">
+          <button class="btn accent" onclick="viewSubmissions()">View Submissions</button>
+          <span id="submissions-status" class="status"></span>
+        </div>
+        <div id="submissions-list" class="question-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="student-screen" class="screen hidden">
+    <header>
+      <button class="btn back" onclick="goToLogin()">&larr; Back</button>
+      <h2>Student Dashboard</h2>
+      <div class="header-right">
+        <span id="student-exam-label" class="pill"></span>
+        <span id="student-user-label" class="pill student-badge"></span>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h3>1. View &amp; Answer Questions</h3>
+        <div class="field-row"><label>Exam ID</label><input id="student-exam-id"></div>
+        <button class="btn accent" onclick="loadQuestions()">Load Questions</button>
+        <span id="load-status" class="status"></span>
+        <div id="exam-timer" class="timer"></div>
+        <div id="question-cards"></div>
+      </section>
+
+      <section class="card">
+        <h3>2. Submit Exam</h3>
+        <p>Roll No: <strong id="submit-rollno-label"></strong></p>
+        <button class="btn success" onclick="submitExam()">Submit Exam</button>
+        <span id="submit-status" class="status"></span>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

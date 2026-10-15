@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component;
 public class CodingQuestionFactory implements QuestionFactory {
 
     @Override
-    public Question createQuestion(Long examId, String text, int marks) {
-        return new Question(null, examId, "CODING", text, marks);
+    public Question createQuestion(Long examId, String text, int marks, String extra) {
+        String language = (extra == null || extra.isBlank()) ? "any" : extra;
+        return new Question(null, examId, "CODING", text, marks, "language:" + language);
     }
 }
