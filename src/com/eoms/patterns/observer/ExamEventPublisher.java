@@ -10,6 +10,7 @@ public final class ExamEventPublisher {
     private final List<ExamEventListener> postCommit = new CopyOnWriteArrayList<>();
     public void subscribe(ExamEventListener listener) { listeners.add(listener); }
     public void subscribeAfterCommit(ExamEventListener listener) { postCommit.add(listener); }
+    public void unsubscribeAfterCommit(ExamEventListener listener) { postCommit.remove(listener); }
     public void publish(ExamEvent event, Connection transaction) throws SQLException {
         for (ExamEventListener listener : listeners) listener.onEvent(event, transaction);
     }

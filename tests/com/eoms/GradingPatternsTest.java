@@ -26,7 +26,8 @@ public final class GradingPatternsTest {
         assert !PasswordHashes.matches("wrong-password", stored);
 
         List<String> order = new ArrayList<>();
-        GradingWorkflow<String, Double> workflow = new GradingWorkflow<>() {
+        class CheckWorkflow extends GradingWorkflow<String, Double> {
+            public Result run(long id) throws Exception { return grade(id); }
             protected void validate(long id) { order.add("validate"); }
             protected String loadAnswers(long id) { order.add("load"); return "answer"; }
             protected Double evaluate(String value) { order.add("evaluate"); return 2.0; }
@@ -34,8 +35,9 @@ public final class GradingPatternsTest {
             protected Result produceResult(long id, Double score) {
                 order.add("result"); return new Result(id, score, false);
             }
-        };
-        assert workflow.grade(2).score() == 2.0;
+        }
+        CheckWorkflow workflow = new CheckWorkflow();
+        assert workflow.run(2).score() == 2.0;
         assert order.equals(List.of("validate", "load", "evaluate", "calculate", "result"));
         Exam exam = new Exam(1L, "Test", 60, LocalDateTime.of(2026, 1, 1, 10, 0),
                 LocalDateTime.of(2026, 1, 1, 11, 0), "ENDED");

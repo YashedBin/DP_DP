@@ -23,6 +23,11 @@ public final class GradingService extends GradingWorkflow<List<GradingService.Ro
 
     public GradingService(DatabaseConnection database) { this.database = database; }
 
+    public Result gradeForTeacher(TeacherSession teacher, long submissionId) throws SQLException {
+        requireTeacher(teacher);
+        return grade(submissionId);
+    }
+
     @Override
     protected void validate(long submissionId) throws SQLException {
         try (Connection connection = database.open();
@@ -91,7 +96,8 @@ public final class GradingService extends GradingWorkflow<List<GradingService.Ro
         return new Result(submissionId, score, score == null);
     }
 
-    public void recordManualMark(long answerId, double marks) throws SQLException {
+    public void recordManualMark(TeacherSession teacher, long answerId, double marks) throws SQLException {
+        requireTeacher(teacher);
         if (!Double.isFinite(marks) || marks < 0) throw new IllegalArgumentException("Invalid marks");
         try (Connection connection = database.open();
                 PreparedStatement statement = connection.prepareStatement(
@@ -107,16 +113,36 @@ public final class GradingService extends GradingWorkflow<List<GradingService.Ro
         }
     }
 
-    public void setMcqKey(long questionId, String answer) throws SQLException {
+    public void setMcqKey(TeacherSession teacher, long questionId, String answer) throws SQLException {
+        requireTeacher(teacher);
         if (answer == null || answer.isBlank()) throw new IllegalArgumentException("Correct answer is required");
         try (Connection connection = database.open();
                 PreparedStatement statement = connection.prepareStatement(
                         "INSERT INTO question_keys (question_id, correct_answer) "
-                        + "SELECT id, ? FROM questions WHERE id = ? AND type = 'MCQ' "
+                        + "SELECT q.id, ? FROM questions q JOIN exams e ON e.id = q.exam_id "
+                        + "WHERE q.id = ? AND q.type = 'MCQ' AND e.status = 'DRAFT' "
                         + "ON CONFLICT (question_id) DO UPDATE SET correct_answer = EXCLUDED.correct_answer")) {
             statement.setString(1, answer.trim());
             statement.setLong(2, questionId);
             if (statement.executeUpdate() != 1) throw new IllegalArgumentException("MCQ question not found");
         }
+    }
+
+    public void publish(TeacherSession teacher, long examId) throws SQLException {
+        requireTeacher(teacher);
+        try (Connection connection = database.open();
+                PreparedStatement statement = connection.prepareStatement(
+                        "UPDATE exams e SET grades_published = TRUE WHERE e.id = ? AND e.status = 'ENDED' "
+                        + "AND NOT EXISTS (SELECT 1 FROM submissions s WHERE s.exam_id = e.id "
+                        + "AND s.status <> 'GRADED')")) {
+            statement.setLong(1, examId);
+            if (statement.executeUpdate() != 1) {
+                throw new IllegalStateException("End the exam and grade every submission before publishing");
+            }
+        }
+    }
+
+    private static void requireTeacher(TeacherSession teacher) {
+        if (teacher == null) throw new IllegalArgumentException("Teacher login required");
     }
 }

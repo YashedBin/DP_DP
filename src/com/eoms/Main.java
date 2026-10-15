@@ -15,7 +15,7 @@ public final class Main {
             } catch (Exception ignored) {
                 // The default Swing look and feel is still usable.
             }
-            context.createWelcomeFrame().setVisible(true);
+            context.createLoginFrame().setVisible(true);
         });
     }
 }

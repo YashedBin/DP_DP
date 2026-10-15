@@ -47,6 +47,25 @@ public final class SubmissionRepository {
         }
     }
 
+    public List<Submission> findPublishedForStudent(long studentId) throws SQLException {
+        try (Connection connection = database.open();
+                PreparedStatement statement = connection.prepareStatement(
+                        "SELECT s.id, s.exam_id, s.student_id, s.submitted_at, s.status, s.score "
+                        + "FROM submissions s JOIN exams e ON e.id = s.exam_id "
+                        + "WHERE s.student_id = ? AND e.grades_published = TRUE ORDER BY s.id")) {
+            statement.setLong(1, studentId);
+            try (ResultSet rows = statement.executeQuery()) {
+                List<Submission> results = new ArrayList<>();
+                while (rows.next()) {
+                    results.add(new Submission(rows.getLong("id"), rows.getLong("exam_id"),
+                            rows.getLong("student_id"), rows.getTimestamp("submitted_at").toLocalDateTime(),
+                            rows.getString("status"), (Double) rows.getObject("score")));
+                }
+                return results;
+            }
+        }
+    }
+
     public Submission save(Connection connection, Submission submission) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "INSERT INTO submissions (exam_id, student_id, submitted_at, status, score) "

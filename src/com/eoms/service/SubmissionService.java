@@ -102,7 +102,15 @@ public final class SubmissionService {
     }
 
     /** Intended for teacher review; role authorization is not yet implemented. */
-    public List<Submission> listForReview(long examId) throws SQLException {
+    public List<Submission> listForReview(TeacherSession teacher, long examId) throws SQLException {
+        if (teacher == null) throw new IllegalArgumentException("Teacher login required");
         return submissions.findByExamId(examId);
+    }
+
+    public List<Answer> reviewAnswers(TeacherSession teacher, long submissionId) throws SQLException {
+        if (teacher == null) throw new IllegalArgumentException("Teacher login required");
+        try (Connection connection = database.open()) {
+            return answers.findBySubmissionId(connection, submissionId);
+        }
     }
 }

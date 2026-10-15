@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS exams (
     duration_minutes INT NOT NULL,
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT'
+    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    grades_published BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS questions (
@@ -56,5 +57,6 @@ CREATE TABLE IF NOT EXISTS answers (
 
 CREATE TABLE IF NOT EXISTS teachers (
     id BIGSERIAL PRIMARY KEY,
-    username VARCHAR(100) NOT NULL UNIQUE
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password_hash TEXT
 );

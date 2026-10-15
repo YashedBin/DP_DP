@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Fixed procedure; concrete workflow loads and evaluates according to its data source. */
 public abstract class GradingWorkflow<Loaded, Evaluated> {
-    public final Result grade(long submissionId) throws SQLException {
+    protected final Result grade(long submissionId) throws SQLException {
         validate(submissionId);
         Loaded loaded = loadAnswers(submissionId);
         Evaluated evaluated = evaluate(loaded);

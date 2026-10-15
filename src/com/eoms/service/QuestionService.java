@@ -30,19 +30,23 @@ public final class QuestionService {
         return studentQuestions.forStudent(examId, student);
     }
 
-    public List<Question> listForEditor(long examId) throws SQLException {
+    public List<Question> listForEditor(TeacherSession teacher, long examId) throws SQLException {
+        requireTeacher(teacher);
         requireDraft(examId);
         return questions.findByExamId(examId);
     }
 
-    public Question add(long examId, String type, String text, int marks, String options) throws SQLException {
+    public Question add(TeacherSession teacher, long examId, String type, String text,
+            int marks, String options) throws SQLException {
+        requireTeacher(teacher);
         Question question = new Question(null, examId, normalizeType(type), text, marks, options);
         validate(question);
         requireDraft(examId);
         return questions.save(question);
     }
 
-    public void update(Question question) throws SQLException {
+    public void update(TeacherSession teacher, Question question) throws SQLException {
+        requireTeacher(teacher);
         if (question == null || question.getId() == null || question.getExamId() == null) {
             throw new IllegalArgumentException("Question identity and exam are required");
         }
@@ -52,7 +56,8 @@ public final class QuestionService {
         if (!questions.update(question)) throw new IllegalArgumentException("Question not found in exam");
     }
 
-    public void remove(long examId, long questionId) throws SQLException {
+    public void remove(TeacherSession teacher, long examId, long questionId) throws SQLException {
+        requireTeacher(teacher);
         requireDraft(examId);
         if (!questions.delete(examId, questionId)) {
             throw new IllegalArgumentException("Question not found in exam");
@@ -64,6 +69,10 @@ public final class QuestionService {
         if (exam == null || !"DRAFT".equals(exam.getStatus())) {
             throw new IllegalStateException("Questions can only be edited in a draft exam");
         }
+    }
+
+    private static void requireTeacher(TeacherSession teacher) {
+        if (teacher == null) throw new IllegalArgumentException("Teacher login required");
     }
 
     private static String normalizeType(String type) {

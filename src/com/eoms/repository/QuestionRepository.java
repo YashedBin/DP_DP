@@ -92,6 +92,14 @@ public final class QuestionRepository {
         }
     }
 
+    public void deleteForDraft(Connection connection, long examId) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "DELETE FROM questions WHERE exam_id = ?")) {
+            statement.setLong(1, examId);
+            statement.executeUpdate();
+        }
+    }
+
     private static Question read(ResultSet rows) throws SQLException {
         return new Question(rows.getLong("id"), rows.getLong("exam_id"), rows.getString("type"),
                 rows.getString("text"), rows.getInt("marks"), rows.getString("options"));

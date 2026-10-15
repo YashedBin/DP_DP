@@ -84,6 +84,19 @@ public final class ExamRepository {
         }
     }
 
+    public void updateDraft(Connection connection, long id, Exam draft) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "UPDATE exams SET title = ?, duration_minutes = ?, start_time = ?, end_time = ? "
+                        + "WHERE id = ? AND status = 'DRAFT'")) {
+            statement.setString(1, draft.getTitle());
+            statement.setInt(2, draft.getDurationMinutes());
+            statement.setTimestamp(3, Timestamp.valueOf(draft.getStartTime()));
+            statement.setTimestamp(4, Timestamp.valueOf(draft.getEndTime()));
+            statement.setLong(5, id);
+            if (statement.executeUpdate() != 1) throw new IllegalStateException("Exam is no longer a draft");
+        }
+    }
+
     public boolean transition(Connection connection, long id, String from, String to) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                         "UPDATE exams SET status = ? WHERE id = ? AND status = ?")) {
