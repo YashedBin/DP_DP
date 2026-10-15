@@ -31,16 +31,28 @@ public final class StudentRepository {
         }
     }
 
-    public Student save(Student student) throws SQLException {
+    public Student save(Student student, String passwordHash) throws SQLException {
         try (Connection connection = database.open();
                 PreparedStatement statement = connection.prepareStatement(
-                        "INSERT INTO students (name, email) VALUES (?, ?) RETURNING id")) {
+                        "INSERT INTO students (name, email, password_hash) VALUES (?, ?, ?) RETURNING id")) {
             statement.setString(1, student.getName());
             statement.setString(2, student.getEmail());
+            statement.setString(3, passwordHash);
             try (ResultSet keys = statement.executeQuery()) {
                 if (!keys.next()) throw new SQLException("Student insert returned no ID");
                 student.setId(keys.getLong(1));
                 return student;
+            }
+        }
+    }
+
+    public String passwordHash(long studentId) throws SQLException {
+        try (Connection connection = database.open();
+                PreparedStatement statement = connection.prepareStatement(
+                        "SELECT password_hash FROM students WHERE id = ?")) {
+            statement.setLong(1, studentId);
+            try (ResultSet rows = statement.executeQuery()) {
+                return rows.next() ? rows.getString(1) : null;
             }
         }
     }

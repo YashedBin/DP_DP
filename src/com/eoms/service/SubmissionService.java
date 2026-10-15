@@ -5,6 +5,11 @@ import com.eoms.model.Answer;
 import com.eoms.model.Exam;
 import com.eoms.model.Question;
 import com.eoms.model.Submission;
+import com.eoms.patterns.chainofresponsibility.AuthCheckHandler;
+import com.eoms.patterns.chainofresponsibility.DuplicateSubmissionHandler;
+import com.eoms.patterns.chainofresponsibility.ExamWindowHandler;
+import com.eoms.patterns.chainofresponsibility.SubmissionContext;
+import com.eoms.patterns.chainofresponsibility.SubmissionHandler;
 import com.eoms.repository.AnswerRepository;
 import com.eoms.repository.ExamRepository;
 import com.eoms.repository.QuestionRepository;
@@ -26,6 +31,7 @@ public final class SubmissionService {
     private final SubmissionRepository submissions;
     private final AnswerRepository answers;
     private final Clock clock;
+    private final SubmissionHandler validation;
 
     public SubmissionService(DatabaseConnection database, ExamRepository exams, QuestionRepository questions,
             StudentRepository students, SubmissionRepository submissions, AnswerRepository answers, Clock clock) {
@@ -36,9 +42,12 @@ public final class SubmissionService {
         this.submissions = submissions;
         this.answers = answers;
         this.clock = clock;
+        SubmissionHandler auth = new AuthCheckHandler(students);
+        auth.then(new ExamWindowHandler()).then(new DuplicateSubmissionHandler(submissions));
+        this.validation = auth;
     }
 
-    public Submission submit(long examId, long studentId, Map<Long, String> responses) throws SQLException {
+    public Submission submit(long examId, StudentSession student, Map<Long, String> responses) throws SQLException {
         if (responses == null) throw new IllegalArgumentException("Answers must not be null");
         try (Connection connection = database.open()) {
             connection.setAutoCommit(false);
@@ -46,19 +55,8 @@ public final class SubmissionService {
                 // Lock before checking for a previous submission. Competing calls for this
                 // exam must wait and then see the first transaction's committed row.
                 Exam exam = exams.lockById(connection, examId);
-                if (exam == null || !"ONGOING".equals(exam.getStatus())) {
-                    throw new IllegalStateException("Exam is not ongoing");
-                }
                 LocalDateTime now = LocalDateTime.now(clock);
-                if (now.isBefore(exam.getStartTime()) || now.isAfter(exam.getEndTime())) {
-                    throw new IllegalStateException("Exam is outside its scheduled window");
-                }
-                if (students.findById(connection, studentId) == null) {
-                    throw new IllegalArgumentException("Student does not exist");
-                }
-                if (submissions.exists(connection, examId, studentId)) {
-                    throw new IllegalStateException("Student has already submitted this exam");
-                }
+                validation.handle(new SubmissionContext(connection, exam, student, now));
 
                 for (Map.Entry<Long, String> response : responses.entrySet()) {
                     Long questionId = response.getKey();
@@ -72,7 +70,7 @@ public final class SubmissionService {
                 }
 
                 Submission saved = submissions.save(connection,
-                        new Submission(null, examId, studentId, now, "SUBMITTED", null));
+                        new Submission(null, examId, student.studentId(), now, "SUBMITTED", null));
                 for (Map.Entry<Long, String> response : responses.entrySet()) {
                     answers.save(connection, new Answer(null, saved.getId(), response.getKey(), response.getValue()));
                 }

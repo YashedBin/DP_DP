@@ -1,7 +1,8 @@
 CREATE TABLE IF NOT EXISTS students (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash TEXT
 );
 
 CREATE TABLE IF NOT EXISTS exams (
@@ -20,6 +21,11 @@ CREATE TABLE IF NOT EXISTS questions (
     text TEXT NOT NULL,
     marks INT NOT NULL,
     options TEXT
+);
+
+CREATE TABLE IF NOT EXISTS question_keys (
+    question_id BIGINT PRIMARY KEY REFERENCES questions(id) ON DELETE CASCADE,
+    correct_answer TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS submissions (
@@ -44,7 +50,8 @@ CREATE TABLE IF NOT EXISTS answers (
     id BIGSERIAL PRIMARY KEY,
     submission_id BIGINT NOT NULL REFERENCES submissions(id),
     question_id BIGINT NOT NULL REFERENCES questions(id),
-    answer_text TEXT
+    answer_text TEXT,
+    awarded_marks DOUBLE PRECISION
 );
 
 CREATE TABLE IF NOT EXISTS teachers (

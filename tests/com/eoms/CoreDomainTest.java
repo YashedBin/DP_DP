@@ -38,7 +38,7 @@ public final class CoreDomainTest {
         expectInvalid(() -> questions.add(1, "OTHER", "Question", 5, null));
         expectInvalid(() -> questions.add(1, "MCQ", "Question", 5, null));
         StudentService students = new StudentService(new StudentRepository(missing));
-        expectInvalid(() -> students.register("", "student@example.test"));
+        expectInvalid(() -> students.register("", "student@example.test", "password123"));
         // Construction alone must not open the database or create a Swing window.
         new ApplicationContext();
         System.out.println("Core domain checks passed (database not contacted).");

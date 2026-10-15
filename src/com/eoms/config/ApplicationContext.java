@@ -6,6 +6,7 @@ import com.eoms.service.JdbcExamService;
 import com.eoms.service.QuestionService;
 import com.eoms.service.StudentService;
 import com.eoms.service.SubmissionService;
+import com.eoms.service.GradingService;
 import com.eoms.repository.AnswerRepository;
 import com.eoms.repository.ExamRepository;
 import com.eoms.repository.QuestionRepository;
@@ -20,6 +21,7 @@ public final class ApplicationContext {
     private final QuestionService questionService;
     private final StudentService studentService;
     private final SubmissionService submissionService;
+    private final GradingService gradingService;
 
     public ApplicationContext() {
         Clock clock = Clock.systemDefaultZone();
@@ -33,12 +35,14 @@ public final class ApplicationContext {
         questionService = new QuestionService(exams, questions);
         studentService = new StudentService(students);
         submissionService = new SubmissionService(database, exams, questions, students, submissions, answers, clock);
+        gradingService = new GradingService(database);
     }
 
     public ExamService exams() { return examService; }
     public QuestionService questions() { return questionService; }
     public StudentService students() { return studentService; }
     public SubmissionService submissions() { return submissionService; }
+    public GradingService grading() { return gradingService; }
 
     /** Called on the Swing event dispatch thread. */
     public WelcomeFrame createWelcomeFrame() {
