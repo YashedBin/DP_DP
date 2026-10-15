@@ -1,7 +1,14 @@
-# HEHEHEHHEHE
-exam_system/eoms/target/
-exam_system/eoms/bin/
-exam_system/eoms/.idea/
-exam_system/eoms/.vscode/
+# Generated Java output
+*.class
+out/
+build/
 
-# : D
+# Local database credentials and editor files
+.env
+*.local.properties
+db.properties
+.idea/
+.vscode/
+
+# Historical build output (do not regenerate)
+exam_system/eoms/target/
