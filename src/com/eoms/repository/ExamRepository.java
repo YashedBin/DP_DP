@@ -56,8 +56,13 @@ public final class ExamRepository {
     }
 
     public Exam save(Exam exam) throws SQLException {
-        try (Connection connection = database.open();
-                PreparedStatement statement = connection.prepareStatement(
+        try (Connection connection = database.open()) {
+            return save(connection, exam);
+        }
+    }
+
+    public Exam save(Connection connection, Exam exam) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
                         "INSERT INTO exams (title, duration_minutes, start_time, end_time, status) "
                                 + "VALUES (?, ?, ?, ?, ?) RETURNING id")) {
             statement.setString(1, exam.getTitle());

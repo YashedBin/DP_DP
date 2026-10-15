@@ -18,4 +18,6 @@ public interface ExamService {
     void start(long id) throws SQLException;
 
     void end(long id) throws SQLException;
+
+    Exam duplicate(long id) throws SQLException;
 }

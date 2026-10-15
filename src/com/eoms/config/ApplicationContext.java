@@ -29,7 +29,7 @@ public final class ApplicationContext {
         StudentRepository students = new StudentRepository(database);
         SubmissionRepository submissions = new SubmissionRepository(database);
         AnswerRepository answers = new AnswerRepository();
-        examService = new JdbcExamService(new DraftExamService(clock), exams, clock);
+        examService = new JdbcExamService(new DraftExamService(clock), exams, questions, database, clock);
         questionService = new QuestionService(exams, questions);
         studentService = new StudentService(students);
         submissionService = new SubmissionService(database, exams, questions, students, submissions, answers, clock);

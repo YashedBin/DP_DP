@@ -1,7 +1,12 @@
 package com.eoms.service;
 
 import com.eoms.model.Exam;
+import com.eoms.model.Question;
+import com.eoms.config.DatabaseConnection;
+import com.eoms.patterns.prototype.ExamPrototype;
 import com.eoms.repository.ExamRepository;
+import com.eoms.repository.QuestionRepository;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -12,11 +17,16 @@ public final class JdbcExamService implements ExamService {
     private final DraftExamService drafts;
     private final ExamRepository exams;
     private final Clock clock;
+    private final DatabaseConnection database;
+    private final QuestionRepository questions;
 
-    public JdbcExamService(DraftExamService drafts, ExamRepository exams, Clock clock) {
+    public JdbcExamService(DraftExamService drafts, ExamRepository exams, QuestionRepository questions,
+            DatabaseConnection database, Clock clock) {
         this.drafts = Objects.requireNonNull(drafts);
         this.exams = Objects.requireNonNull(exams);
         this.clock = Objects.requireNonNull(clock);
+        this.database = Objects.requireNonNull(database);
+        this.questions = Objects.requireNonNull(questions);
     }
 
     @Override
@@ -29,11 +39,9 @@ public final class JdbcExamService implements ExamService {
         if (draft == null || draft.getId() != null) {
             throw new IllegalArgumentException("Only new, unsaved exams can be created");
         }
-        Exam valid = drafts.prepareDraft(draft.getTitle(), draft.getDurationMinutes(), draft.getStartTime());
-        if (draft.getEndTime() != null && !draft.getEndTime().isAfter(valid.getStartTime())) {
-            throw new IllegalArgumentException("Exam end time must follow its start time");
-        }
-        if (draft.getEndTime() != null) valid.setEndTime(draft.getEndTime());
+        Exam valid = new com.eoms.patterns.builder.ExamBuilder(clock).title(draft.getTitle())
+                .durationMinutes(draft.getDurationMinutes()).startTime(draft.getStartTime())
+                .endTime(draft.getEndTime()).build();
         return exams.save(valid);
     }
 
@@ -66,6 +74,28 @@ public final class JdbcExamService implements ExamService {
     public void end(long id) throws SQLException {
         if (!exams.transition(id, "ONGOING", "ENDED")) {
             throw new IllegalStateException("Only an ongoing exam can be ended");
+        }
+    }
+
+    @Override
+    public Exam duplicate(long id) throws SQLException {
+        try (Connection connection = database.open()) {
+            connection.setAutoCommit(false);
+            try {
+                Exam source = exams.findById(connection, id);
+                if (source == null) throw new IllegalArgumentException("Exam not found");
+                ExamPrototype.Copy copy = ExamPrototype.duplicate(source, questions.findByExamId(connection, id));
+                Exam newExam = exams.save(connection, copy.exam());
+                for (Question question : copy.questions()) {
+                    question.setExamId(newExam.getId());
+                    questions.save(connection, question);
+                }
+                connection.commit();
+                return newExam;
+            } catch (SQLException | RuntimeException ex) {
+                try { connection.rollback(); } catch (SQLException failure) { ex.addSuppressed(failure); }
+                throw ex;
+            }
         }
     }
 }

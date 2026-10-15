@@ -18,8 +18,13 @@ public final class QuestionRepository {
     }
 
     public List<Question> findByExamId(long examId) throws SQLException {
-        try (Connection connection = database.open();
-                PreparedStatement statement = connection.prepareStatement(
+        try (Connection connection = database.open()) {
+            return findByExamId(connection, examId);
+        }
+    }
+
+    public List<Question> findByExamId(Connection connection, long examId) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
                         "SELECT id, exam_id, type, text, marks, options FROM questions WHERE exam_id = ? ORDER BY id")) {
             statement.setLong(1, examId);
             try (ResultSet rows = statement.executeQuery()) {
@@ -41,8 +46,13 @@ public final class QuestionRepository {
     }
 
     public Question save(Question question) throws SQLException {
-        try (Connection connection = database.open();
-                PreparedStatement statement = connection.prepareStatement(
+        try (Connection connection = database.open()) {
+            return save(connection, question);
+        }
+    }
+
+    public Question save(Connection connection, Question question) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
                         "INSERT INTO questions (exam_id, type, text, marks, options) "
                                 + "VALUES (?, ?, ?, ?, ?) RETURNING id")) {
             statement.setLong(1, question.getExamId());

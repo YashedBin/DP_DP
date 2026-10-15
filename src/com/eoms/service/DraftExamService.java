@@ -1,6 +1,7 @@
 package com.eoms.service;
 
 import com.eoms.model.Exam;
+import com.eoms.patterns.builder.ExamBuilder;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -13,15 +14,8 @@ public final class DraftExamService {
     }
 
     public Exam prepareDraft(String title, int durationMinutes, LocalDateTime startTime) {
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("Exam title is required");
-        }
-        if (durationMinutes <= 0) {
-            throw new IllegalArgumentException("Duration must be positive");
-        }
-        LocalDateTime start = startTime == null ? LocalDateTime.now(clock) : startTime;
-        return new Exam(null, title.trim(), durationMinutes, start,
-                start.plusMinutes(durationMinutes), "DRAFT");
+        return new ExamBuilder(clock).title(title).durationMinutes(durationMinutes)
+                .startTime(startTime).build();
     }
 
 }
