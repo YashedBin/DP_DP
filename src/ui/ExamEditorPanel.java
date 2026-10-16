@@ -7,6 +7,7 @@ import patterns.memento.DraftHistory;
 import patterns.memento.ExamDraft;
 import service.TeacherSession;
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 /** Teacher-only question editor; snapshot/restore works on detached, unsaved draft content. */
@@ -28,44 +30,83 @@ public final class ExamEditorPanel extends JPanel {
     private final JList<Question> list = new JList<>();
 
     public ExamEditorPanel(ApplicationContext context, TeacherSession teacher, Exam exam) {
-        super(new BorderLayout(8, 8));
+        super(new BorderLayout(0, 18));
+        setBackground(AppTheme.BACKGROUND);
+        setBorder(AppTheme.spacing(22, 26, 22, 26));
         this.context = context;
         this.teacher = teacher;
         this.examId = exam.getId();
         draft = new ExamDraft(exam, List.of());
 
-        JComboBox<String> type = new JComboBox<>(new String[]{"MCQ", "SUBJECTIVE", "CODING"});
-        JTextField text = new JTextField();
-        JTextField marks = new JTextField("5");
-        JTextField options = new JTextField();
-        JTextField key = new JTextField();
-        JPanel fields = new JPanel(new GridLayout(5, 2, 8, 8));
-        fields.add(new JLabel("Type")); fields.add(type);
-        fields.add(new JLabel("Question")); fields.add(text);
-        fields.add(new JLabel("Marks")); fields.add(marks);
-        fields.add(new JLabel("Options (comma-separated)")); fields.add(options);
-        fields.add(new JLabel("MCQ correct option text")); fields.add(key);
-        add(fields, BorderLayout.NORTH);
+        JComboBox<String> type = AppTheme.combo(new JComboBox<>(new String[]{"MCQ", "SUBJECTIVE", "CODING"}));
+        JTextArea text = AppTheme.area(new JTextArea(3, 42));
+        JTextField marks = AppTheme.field(new JTextField("5"));
+        JTextField options = AppTheme.field(new JTextField());
+        JTextField key = AppTheme.field(new JTextField());
+        JPanel heading = AppTheme.transparent(new BorderLayout(0, 5));
+        heading.add(AppTheme.title("Question editor"), BorderLayout.NORTH);
+        heading.add(AppTheme.muted("" + exam.getTitle() + "  ·  Answer keys stay private."), BorderLayout.SOUTH);
+        JPanel editor = AppTheme.surface(new BorderLayout(0, 14), 18);
+        editor.add(AppTheme.section("Write a question"), BorderLayout.NORTH);
+        JPanel fields = AppTheme.transparent(new GridLayout(4, 2, 12, 10));
+        fields.add(AppTheme.section("Type")); fields.add(type);
+        fields.add(AppTheme.section("Marks")); fields.add(marks);
+        fields.add(AppTheme.section("Options · comma-separated")); fields.add(options);
+        fields.add(AppTheme.section("Correct option · MCQ only")); fields.add(key);
+        JPanel editorContent = AppTheme.transparent(new BorderLayout(0, 14));
+        JPanel promptPanel = AppTheme.transparent(new BorderLayout(0, 6));
+        promptPanel.add(AppTheme.section("Question text"), BorderLayout.NORTH);
+        JScrollPane textScroll = AppTheme.scroll(text);
+        textScroll.setPreferredSize(new java.awt.Dimension(320, 77));
+        promptPanel.add(textScroll, BorderLayout.CENTER);
+        editorContent.add(promptPanel, BorderLayout.NORTH);
+        editorContent.add(fields, BorderLayout.CENTER);
+        editor.add(editorContent, BorderLayout.CENTER);
+        JPanel top = AppTheme.transparent(new BorderLayout(0, 16));
+        top.add(heading, BorderLayout.NORTH);
+        top.add(editor, BorderLayout.CENTER);
+        add(top, BorderLayout.NORTH);
 
         list.setCellRenderer((items, value, index, selected, focus) -> {
-            JLabel row = new JLabel(value == null ? "" : "#" + value.getId() + " [" + value.getType()
-                    + "] " + value.getText() + " (" + value.getMarks() + ")");
+            JPanel row = AppTheme.transparent(new BorderLayout(8, 0));
             row.setOpaque(true);
-            row.setBackground(selected ? items.getSelectionBackground() : items.getBackground());
-            row.setForeground(selected ? items.getSelectionForeground() : items.getForeground());
+            row.setBackground(selected ? AppTheme.SELECTION : AppTheme.SURFACE);
+            row.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                    javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, AppTheme.BORDER),
+                    AppTheme.spacing(10, 14, 10, 14)));
+            String prompt = value == null ? "" : value.getText().replace('\n', ' ');
+            row.add(AppTheme.section(prompt.length() > 85 ? prompt.substring(0, 85) + "…" : prompt), BorderLayout.CENTER);
+            row.add(AppTheme.muted(value == null ? "" : value.getType() + "  ·  " + value.getMarks() + " marks"),
+                    BorderLayout.EAST);
             return row;
         });
-        add(new JScrollPane(list), BorderLayout.CENTER);
+        list.setFixedCellHeight(52);
+        list.setBackground(AppTheme.SURFACE);
+        JPanel existing = AppTheme.transparent(new BorderLayout(0, 9));
+        existing.add(AppTheme.section("Existing questions"), BorderLayout.NORTH);
+        existing.add(AppTheme.scroll(list), BorderLayout.CENTER);
+        add(existing, BorderLayout.CENTER);
 
-        JPanel actions = new JPanel(new GridLayout(2, 3, 6, 6));
-        JButton refresh = new JButton("Load questions");
-        JButton add = new JButton("Add question");
-        JButton update = new JButton("Update selected");
-        JButton remove = new JButton("Remove selected");
-        JButton save = new JButton("Save snapshot");
-        JButton restore = new JButton("Restore snapshot (preview)");
-        for (JButton button : new JButton[]{refresh, add, update, remove, save, restore}) actions.add(button);
-        add(actions, BorderLayout.SOUTH);
+        JPanel actions = AppTheme.transparent(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JButton refresh = new AppButton("Reload questions", AppButton.Kind.QUIET);
+        JButton add = new AppButton("Add question", AppButton.Kind.PRIMARY);
+        JButton update = new AppButton("Update selected", AppButton.Kind.SECONDARY);
+        JButton remove = new AppButton("Remove selected", AppButton.Kind.DANGER);
+        JButton save = new AppButton("Save snapshot", AppButton.Kind.QUIET);
+        JButton restore = new AppButton("Restore snapshot", AppButton.Kind.QUIET);
+        actions.add(add); actions.add(update); actions.add(remove); actions.add(refresh);
+        JPanel snapshots = AppTheme.surface(new BorderLayout(10, 0), 10);
+        JPanel description = AppTheme.transparent(new GridLayout(2, 1, 0, 4));
+        description.add(AppTheme.section("Draft history"));
+        description.add(AppTheme.muted("Session only · Restoring replaces draft questions."));
+        snapshots.add(description, BorderLayout.CENTER);
+        JPanel historyActions = AppTheme.transparent(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        historyActions.add(save); historyActions.add(restore);
+        snapshots.add(historyActions, BorderLayout.EAST);
+        JPanel bottom = AppTheme.transparent(new BorderLayout(0, 14));
+        bottom.add(actions, BorderLayout.NORTH);
+        bottom.add(snapshots, BorderLayout.SOUTH);
+        add(bottom, BorderLayout.SOUTH);
 
         refresh.addActionListener(e -> refresh());
         add.addActionListener(e -> {

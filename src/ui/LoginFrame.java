@@ -4,43 +4,90 @@ import config.ApplicationContext;
 import service.StudentSession;
 import service.TeacherSession;
 import java.awt.BorderLayout;
-import java.awt.GridLayout;
-import javax.swing.JButton;
+import java.awt.CardLayout;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
 
 public final class LoginFrame extends JFrame {
     public LoginFrame(ApplicationContext context) {
-        super("EOMS / YDVRC — Login");
+        super("YDVRC — Sign in");
+        AppTheme.install();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        JPanel root = new JPanel(new BorderLayout(10, 10));
-        root.setBorder(new EmptyBorder(20, 20, 20, 20));
-        root.add(new JLabel("Your Digital Venue for Rigorous Certification"), BorderLayout.NORTH);
-        JPanel forms = new JPanel(new GridLayout(2, 1, 10, 15));
 
-        JTextField teacherName = new JTextField();
-        JPasswordField teacherPassword = new JPasswordField();
-        JButton teacherLogin = new JButton("Teacher login");
-        JPanel teachers = new JPanel(new GridLayout(3, 2, 8, 8));
-        teachers.add(new JLabel("Teacher username")); teachers.add(teacherName);
-        teachers.add(new JLabel("Password")); teachers.add(teacherPassword);
-        teachers.add(teacherLogin); teachers.add(new JLabel("Provision teacher via SetupAccounts"));
-        forms.add(teachers);
+        JPanel page = AppTheme.page(new GridBagLayout());
+        JPanel column = AppTheme.transparent(new BorderLayout(0, 28));
+        JPanel identity = AppTheme.transparent(new BorderLayout(0, 5));
+        identity.add(AppTheme.brand(), BorderLayout.NORTH);
+        identity.add(AppTheme.muted("Your Digital Venue for Rigorous Certification"), BorderLayout.SOUTH);
+        column.add(identity, BorderLayout.NORTH);
 
-        JTextField studentId = new JTextField();
-        JPasswordField studentPassword = new JPasswordField();
-        JButton studentLogin = new JButton("Student login");
-        JButton register = new JButton("Register new student");
-        JPanel students = new JPanel(new GridLayout(3, 2, 8, 8));
-        students.add(new JLabel("Student ID")); students.add(studentId);
-        students.add(new JLabel("Password")); students.add(studentPassword);
-        students.add(studentLogin); students.add(register);
-        forms.add(students);
-        root.add(forms, BorderLayout.CENTER);
+        JPanel card = AppTheme.surface(new BorderLayout(0, 20), 30);
+        JPanel intro = AppTheme.transparent(new BorderLayout(0, 6));
+        intro.add(AppTheme.title("Welcome back"), BorderLayout.NORTH);
+        intro.add(AppTheme.muted("Sign in to continue to your examination space."), BorderLayout.SOUTH);
+        card.add(intro, BorderLayout.NORTH);
+
+        CardLayout views = new CardLayout();
+        JPanel forms = AppTheme.transparent(views);
+        JTextField teacherName = AppTheme.field(new JTextField());
+        JPasswordField teacherPassword = AppTheme.field(new JPasswordField());
+        AppButton teacherLogin = new AppButton("Sign in as teacher", AppButton.Kind.PRIMARY);
+        JPanel teachers = form("Username", teacherName, "Password", teacherPassword, teacherLogin,
+                "Teacher accounts are configured by an administrator.");
+
+        JTextField studentId = AppTheme.field(new JTextField());
+        JPasswordField studentPassword = AppTheme.field(new JPasswordField());
+        AppButton studentLogin = new AppButton("Sign in as student", AppButton.Kind.PRIMARY);
+        JPanel students = form("Student ID", studentId, "Password", studentPassword, studentLogin, null);
+        forms.add(teachers, "teacher");
+        forms.add(students, "student");
+
+        JPanel middle = AppTheme.transparent(new BorderLayout(0, 20));
+        JPanel roles = AppTheme.transparent(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        AppButton teacherTab = new AppButton("Teacher", AppButton.Kind.SECONDARY);
+        AppButton studentTab = new AppButton("Student", AppButton.Kind.QUIET);
+        roles.add(teacherTab);
+        roles.add(studentTab);
+        middle.add(roles, BorderLayout.NORTH);
+        middle.add(forms, BorderLayout.CENTER);
+        card.add(middle, BorderLayout.CENTER);
+
+        JPanel foot = AppTheme.transparent(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        AppButton register = new AppButton("New student? Create an account", AppButton.Kind.QUIET);
+        foot.add(register);
+        register.setVisible(false);
+        card.add(foot, BorderLayout.SOUTH);
+        teacherTab.addActionListener(e -> {
+            views.show(forms, "teacher");
+            teacherTab.setEnabled(false);
+            studentTab.setEnabled(true);
+            register.setVisible(false);
+        });
+        studentTab.addActionListener(e -> {
+            views.show(forms, "student");
+            teacherTab.setEnabled(true);
+            studentTab.setEnabled(false);
+            register.setVisible(true);
+        });
+        teacherTab.setEnabled(false);
+
+        column.add(card, BorderLayout.CENTER);
+        GridBagConstraints place = new GridBagConstraints();
+        place.fill = GridBagConstraints.HORIZONTAL;
+        place.weightx = 1;
+        place.gridx = 0;
+        place.gridy = 0;
+        place.ipadx = 12;
+        page.add(column, place);
 
         teacherLogin.addActionListener(e -> {
             String username = teacherName.getText().trim();
@@ -65,25 +112,54 @@ public final class LoginFrame extends JFrame {
                     });
         });
         register.addActionListener(e -> {
-            JTextField name = new JTextField();
-            JTextField email = new JTextField();
-            JPasswordField password = new JPasswordField();
-            JPanel fields = new JPanel(new GridLayout(3, 2, 8, 8));
-            fields.add(new JLabel("Name")); fields.add(name);
-            fields.add(new JLabel("Email")); fields.add(email);
-            fields.add(new JLabel("Password (8+ chars)")); fields.add(password);
-            if (javax.swing.JOptionPane.showConfirmDialog(this, fields, "New student",
+            JTextField name = AppTheme.field(new JTextField());
+            JTextField email = AppTheme.field(new JTextField());
+            JPasswordField password = AppTheme.field(new JPasswordField());
+            JPanel fields = AppTheme.transparent(new java.awt.GridLayout(3, 2, 8, 8));
+            fields.add(AppTheme.section("Name")); fields.add(name);
+            fields.add(AppTheme.section("Email")); fields.add(email);
+            fields.add(AppTheme.section("Password (8+ chars)")); fields.add(password);
+            if (javax.swing.JOptionPane.showConfirmDialog(this, fields, "Create student account",
                     javax.swing.JOptionPane.OK_CANCEL_OPTION) != javax.swing.JOptionPane.OK_OPTION) return;
             String secret = new String(password.getPassword());
             String fullName = name.getText();
             String address = email.getText();
             password.setText("");
             UiTasks.run(this, () -> context.students().register(fullName, address, secret),
-                    created -> UiTasks.show(this, "Registered. Your student ID is " + created.getId()));
+                    created -> UiTasks.show(this, "Your student ID is " + created.getId() + ". Keep it for sign-in."));
         });
 
-        setContentPane(root);
-        setSize(610, 320);
-        setLocationRelativeTo(null);
+        setContentPane(page);
+        AppTheme.sizeWindow(this, 550, 580, 430, 490);
+    }
+
+    private static JPanel form(String firstName, JTextField first, String secondName,
+            JPasswordField second, AppButton action, String note) {
+        JPanel body = AppTheme.transparent(null);
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        field(body, firstName, first);
+        body.add(Box.createVerticalStrut(17));
+        field(body, secondName, second);
+        body.add(Box.createVerticalStrut(23));
+        action.setAlignmentX(Component.LEFT_ALIGNMENT);
+        action.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 40));
+        body.add(action);
+        if (note != null) {
+            body.add(Box.createVerticalStrut(14));
+            JLabel hint = AppTheme.muted(note);
+            hint.setAlignmentX(Component.LEFT_ALIGNMENT);
+            body.add(hint);
+        }
+        return body;
+    }
+
+    private static void field(JPanel body, String name, JTextField input) {
+        JLabel label = AppTheme.label(name, AppTheme.SMALL.deriveFont(java.awt.Font.BOLD), AppTheme.INK);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        input.setAlignmentX(Component.LEFT_ALIGNMENT);
+        input.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 40));
+        body.add(label);
+        body.add(Box.createVerticalStrut(7));
+        body.add(input);
     }
 }
