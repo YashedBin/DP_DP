@@ -115,39 +115,23 @@ public final class TeacherDashboard extends JFrame {
         exams.addListSelectionListener(e -> { if (!e.getValueIsAdjusting()) updateActions.run(); });
         updateActions.run();
 
-        JTextField title = AppTheme.field(new JTextField());
-        JTextField minutes = AppTheme.field(new JTextField("60"));
-        JTextField start = AppTheme.field(new JTextField(
-                LocalDateTime.now().withSecond(0).withNano(0).toString()));
         add.addActionListener(e -> {
-            if (!examForm("New examination", title, minutes, start)) return;
-            String name = title.getText();
-            int length;
-            LocalDateTime scheduled;
-            try {
-                length = Integer.parseInt(minutes.getText().trim());
-                scheduled = LocalDateTime.parse(start.getText().trim());
-            } catch (RuntimeException ex) { UiTasks.show(this, "Check duration and ISO start date/time."); return; }
+            ExamInput input = examForm("New examination", "", 60,
+                    LocalDateTime.now().withSecond(0).withNano(0));
+            if (input == null) return;
             UiTasks.run(this, () -> context.exams().create(teacher,
-                    context.exams().prepareDraft(name, length, scheduled)), created -> {
+                    context.exams().prepareDraft(input.title(), input.minutes(), input.start())), created -> {
                 UiTasks.show(this, "Examination #" + created.getId() + " created.");
                 refresh(states, listing, updateActions);
             });
         });
         configure.addActionListener(e -> {
             Exam current = selected(); if (current == null) return;
-            title.setText(current.getTitle());
-            minutes.setText(Integer.toString(current.getDurationMinutes()));
-            start.setText(current.getStartTime().toString());
-            if (!examForm("Configure draft", title, minutes, start)) return;
-            int length;
-            LocalDateTime scheduled;
-            try {
-                length = Integer.parseInt(minutes.getText().trim());
-                scheduled = LocalDateTime.parse(start.getText().trim());
-            } catch (RuntimeException ex) { UiTasks.show(this, "Check duration and ISO start date/time."); return; }
+            ExamInput input = examForm("Configure draft", current.getTitle(),
+                    current.getDurationMinutes(), current.getStartTime());
+            if (input == null) return;
             Exam draft;
-            try { draft = context.exams().prepareDraft(title.getText(), length, scheduled); }
+            try { draft = context.exams().prepareDraft(input.title(), input.minutes(), input.start()); }
             catch (IllegalArgumentException ex) { UiTasks.show(this, ex.getMessage()); return; }
             UiTasks.run(this, () -> { context.exams().configureDraft(teacher, current.getId(), draft); return null; },
                     ignored -> refresh(states, listing, updateActions));
@@ -194,14 +178,26 @@ public final class TeacherDashboard extends JFrame {
         refresh(states, listing, updateActions);
     }
 
-    private boolean examForm(String caption, JTextField title, JTextField minutes, JTextField start) {
-        JPanel form = AppTheme.surface(new GridLayout(3, 2, 12, 12), 16);
+    private ExamInput examForm(String caption, String initialTitle, int initialMinutes, LocalDateTime initialStart) {
+        JTextField title = AppTheme.field(new JTextField(initialTitle));
+        JTextField minutes = AppTheme.field(new JTextField(Integer.toString(initialMinutes)));
+        ExamDateTimePicker start = new ExamDateTimePicker(initialStart);
+        JPanel form = AppTheme.surface(new GridLayout(4, 2, 12, 12), 16);
         form.add(AppTheme.section("Title")); form.add(title);
         form.add(AppTheme.section("Duration (minutes)")); form.add(minutes);
-        form.add(AppTheme.section("Start (YYYY-MM-DDTHH:MM)")); form.add(start);
-        return JOptionPane.showConfirmDialog(this, form, caption,
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION;
+        form.add(AppTheme.section("Start date")); form.add(start.dateButton());
+        form.add(AppTheme.section("Start time · 24-hour")); form.add(start.timeSpinner());
+        if (JOptionPane.showConfirmDialog(this, form, caption,
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return null;
+        try {
+            return new ExamInput(title.getText(), Integer.parseInt(minutes.getText().trim()), start.selected());
+        } catch (NumberFormatException | java.text.ParseException ex) {
+            UiTasks.show(this, "Enter a valid duration and start time.");
+            return null;
+        }
     }
+
+    private record ExamInput(String title, int minutes, LocalDateTime start) {}
 
     private Exam selected() {
         Exam exam = exams.getSelectedValue();
