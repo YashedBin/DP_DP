@@ -9,7 +9,8 @@ public final class Main {
         ApplicationContext context = new ApplicationContext();
         SwingUtilities.invokeLater(() -> {
             try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                // Consistent component colors on Windows and Linux; native themes may ignore the dark palette.
+                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             } catch (Exception ignored) {
                 // The default Swing look and feel is still usable.
             }

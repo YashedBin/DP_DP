@@ -1,6 +1,6 @@
-# EOMS / YDVRC
+# EOMS
 
-**Online Examination Management System** — Your Digital Venue for Rigorous Certification.
+**Online Examination Management System**.
 Semester 5 Design Patterns Lab project. This is a single-JVM Java 17+ Swing/AWT
 desktop application backed by PostgreSQL 16 via plain JDBC. There is no server,
 HTTP API, web frontend, Maven or Spring dependency.

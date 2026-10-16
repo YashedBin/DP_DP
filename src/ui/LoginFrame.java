@@ -19,7 +19,7 @@ import javax.swing.JTextField;
 
 public final class LoginFrame extends JFrame {
     public LoginFrame(ApplicationContext context) {
-        super("YDVRC — Sign in");
+        super("EOMS — Sign in");
         AppTheme.install();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -27,7 +27,7 @@ public final class LoginFrame extends JFrame {
         JPanel column = AppTheme.transparent(new BorderLayout(0, 28));
         JPanel identity = AppTheme.transparent(new BorderLayout(0, 5));
         identity.add(AppTheme.brand(), BorderLayout.NORTH);
-        identity.add(AppTheme.muted("Your Digital Venue for Rigorous Certification"), BorderLayout.SOUTH);
+        identity.add(AppTheme.muted("Online Examination Management System"), BorderLayout.SOUTH);
         column.add(identity, BorderLayout.NORTH);
 
         JPanel card = AppTheme.surface(new BorderLayout(0, 20), 30);

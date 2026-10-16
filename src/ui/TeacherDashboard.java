@@ -32,7 +32,7 @@ public final class TeacherDashboard extends JFrame {
     private final JList<Exam> exams = new JList<>();
 
     public TeacherDashboard(ApplicationContext context, TeacherSession teacher) {
-        super("YDVRC — Teacher");
+        super("EOMS — Teacher");
         this.context = context;
         this.teacher = teacher;
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

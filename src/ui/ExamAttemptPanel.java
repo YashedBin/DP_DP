@@ -118,7 +118,7 @@ public final class ExamAttemptPanel extends JPanel {
             section.setAlignmentX(LEFT_ALIGNMENT);
             JPanel top = AppTheme.transparent(new BorderLayout());
             top.add(AppTheme.label("QUESTION " + (++number) + "  /  " + loaded.size(),
-                    AppTheme.SMALL.deriveFont(Font.BOLD), AppTheme.ACCENT_DARK), BorderLayout.WEST);
+                    AppTheme.SMALL.deriveFont(Font.BOLD), AppTheme.SECONDARY), BorderLayout.WEST);
             top.add(AppTheme.muted(question.getMarks() + " marks  ·  " + question.getType()), BorderLayout.EAST);
             section.add(top, BorderLayout.NORTH);
 
@@ -140,9 +140,7 @@ public final class ExamAttemptPanel extends JPanel {
                 for (String raw : question.getOptions().split(",")) {
                     String value = raw.trim();
                     JRadioButton choice = new JRadioButton(value);
-                    choice.setFont(AppTheme.BODY);
-                    choice.setForeground(AppTheme.INK);
-                    choice.setBackground(AppTheme.SURFACE);
+                    AppTheme.radio(choice);
                     choice.setFocusPainted(true);
                     choice.setBorder(AppTheme.spacing(6, 8, 6, 8));
                     choice.addActionListener(e -> updateProgress());

@@ -33,6 +33,6 @@ final class UiTasks {
     static void show(Component owner, String text) {
         String message = "Invalid teacher credentials".equals(text) || "Invalid student credentials".equals(text)
                 ? "We couldn't sign you in. Check your credentials and try again." : text;
-        JOptionPane.showMessageDialog(owner, message, "YDVRC", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(owner, message, "EOMS", JOptionPane.INFORMATION_MESSAGE);
     }
 }

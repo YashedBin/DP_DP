@@ -33,11 +33,11 @@ final class AppButton extends JButton {
         Graphics2D g = (Graphics2D) graphics.create();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         boolean hovered = getModel().isRollover() && isEnabled();
-        Color fill = !isEnabled() ? AppTheme.SOFT : switch (kind) {
-            case PRIMARY -> hovered ? AppTheme.ACCENT_DARK : AppTheme.ACCENT;
-            case SECONDARY -> hovered ? AppTheme.SELECTION : AppTheme.SURFACE;
-            case QUIET -> hovered ? AppTheme.SOFT : AppTheme.BACKGROUND;
-            case DANGER -> hovered ? new Color(0xF2E4E0) : AppTheme.SURFACE;
+        Color fill = !isEnabled() ? AppTheme.RAISED : switch (kind) {
+            case PRIMARY -> hovered ? AppTheme.HOVER : AppTheme.ACCENT;
+            case SECONDARY -> hovered ? AppTheme.HOVER : AppTheme.RAISED;
+            case QUIET -> hovered ? AppTheme.HOVER : AppTheme.BACKGROUND;
+            case DANGER -> hovered ? AppTheme.HOVER : AppTheme.RAISED;
         };
         g.setColor(fill);
         g.fillRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 9, 9);
@@ -46,11 +46,11 @@ final class AppButton extends JButton {
             g.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 9, 9);
         }
         if (hasFocus()) {
-            g.setColor(AppTheme.ACCENT_DARK);
+            g.setColor(AppTheme.ACCENT);
             g.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 8, 8);
         }
         g.dispose();
-        setForeground(!isEnabled() ? AppTheme.MUTED : kind == Kind.PRIMARY ? Color.WHITE
+        setForeground(!isEnabled() ? AppTheme.MUTED : kind == Kind.PRIMARY && !hovered ? AppTheme.BACKGROUND
                 : kind == Kind.DANGER ? AppTheme.DANGER : AppTheme.INK);
         super.paintComponent(graphics);
     }

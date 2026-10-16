@@ -25,7 +25,7 @@ public final class StudentDashboard extends JFrame {
     private final JList<Exam> exams = new JList<>();
 
     public StudentDashboard(ApplicationContext context, StudentSession student) {
-        super("YDVRC — Student");
+        super("EOMS — Student");
         this.context = context;
         this.student = student;
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
